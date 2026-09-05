@@ -6,12 +6,10 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Launch",
-            "type": "lldb",
+            "name": "Launch Flutter",
+            "type": "dart",
             "request": "launch",
-            "program": "${workspaceRoot}/<your program>",
-            "args": [],
-            "cwd": "${workspaceRoot}"
+            "program": "${workspaceFolder}/lib/main.dart"
         }
     ]
 }
