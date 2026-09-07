@@ -35,6 +35,35 @@ abstract class AppStrings {
   static const String corporateClient = 'corporateClient';
   static const String alreadyHaveAccount = 'alreadyHaveAccount';
 
+  // Auth Keys (Login & Sign Up)
+  static const String loginHeaderTitle = 'loginHeaderTitle';
+  static const String loginCorporateHeaderTitle = 'loginCorporateHeaderTitle';
+  static const String loginSubtitle = 'loginSubtitle';
+  static const String emailOrPhone = 'emailOrPhone';
+  static const String emailOrPhoneHint = 'emailOrPhoneHint';
+  static const String emailOrPhoneError = 'emailOrPhoneError';
+  static const String password = 'password';
+  static const String passwordError = 'passwordError';
+  static const String forgotPassword = 'forgotPassword';
+  static const String dontHaveAccount = 'dontHaveAccount';
+  static const String createNewAccount = 'createNewAccount';
+
+  static const String signUpHeaderTitle = 'signUpHeaderTitle';
+  static const String signUpCorporateHeaderTitle = 'signUpCorporateHeaderTitle';
+  static const String signUpSubtitleIndividual = 'signUpSubtitleIndividual';
+  static const String signUpSubtitleCorporate = 'signUpSubtitleCorporate';
+  static const String fullName = 'fullName';
+  static const String fullNameError = 'fullNameError';
+  static const String companyName = 'companyName';
+  static const String companyNameError = 'companyNameError';
+  static const String taxNumber = 'taxNumber';
+  static const String email = 'email';
+  static const String emailError = 'emailError';
+  static const String phone = 'phone';
+  static const String phoneError = 'phoneError';
+  static const String passwordMinError = 'passwordMinError';
+  static const String createAccountBtn = 'createAccountBtn';
+
   // ---------------------------------------------------------------------------
   // 2. القواميس النصية للغات (Localized Dictionaries Maps)
   // ---------------------------------------------------------------------------
@@ -66,10 +95,39 @@ abstract class AppStrings {
     onboardingTitle3: 'الأدوات المكتبية والقرطاسية وتجهيز الشركات',
     onboardingSubtitle3: 'تجهيز متكامل للمكاتب والشركات بكافة الأدوات المكتبية والقرطاسية بأسعار الجملة وعروض أسعار فورية معتمدة.',
 
-    // Account Type & Auth
+    // Account Type & Auth Common
     individualClient: 'حساب أفراد',
     corporateClient: 'شركات ومؤسسات (B2B)',
     alreadyHaveAccount: 'لديك حساب تجاري مسجل بالفعل؟',
+
+    // Auth Translations (Arabic)
+    loginHeaderTitle: 'مرحباً بك مجدداً',
+    loginCorporateHeaderTitle: 'تسجيل دخول الشركات (B2B)',
+    loginSubtitle: 'سجّل الدخول لمتابعة طلباتك ومستلزماتك التقنية',
+    emailOrPhone: 'البريد الإلكتروني / رقم الجوال',
+    emailOrPhoneHint: 'example@domain.com',
+    emailOrPhoneError: 'يرجى إدخال البريد الإلكتروني أو رقم الجوال',
+    password: 'كلمة المرور',
+    passwordError: 'يرجى إدخال كلمة المرور',
+    forgotPassword: 'نسيت كلمة المرور؟',
+    dontHaveAccount: 'ليس لديك حساب؟',
+    createNewAccount: 'إنشاء حساب جديد',
+
+    signUpHeaderTitle: 'حساب جديد',
+    signUpCorporateHeaderTitle: 'إنشاء حساب شركة (B2B)',
+    signUpSubtitleIndividual: 'أنشئ حسابك للبدء بالتسوق وشراء مستلزماتك',
+    signUpSubtitleCorporate: 'أنشئ حساب مؤسستك للحصول على الفواتير وعروض الأسعار',
+    fullName: 'الاسم الكامل',
+    fullNameError: 'يرجى إدخال الاسم الكامل',
+    companyName: 'اسم الشركة / المؤسسة',
+    companyNameError: 'يرجى إدخال اسم الشركة',
+    taxNumber: 'الرقم الضريبي (اختياري)',
+    email: 'البريد الإلكتروني',
+    emailError: 'يرجى إدخال بريد إلكتروني صحيح',
+    phone: 'رقم الجوال',
+    phoneError: 'يرجى إدخال رقم جوال صحيح',
+    passwordMinError: 'كلمة المرور يجب أن تكون 6 خانات على الأقل',
+    createAccountBtn: 'إنشاء الحساب',
   };
 
   static const Map<String, String> en = {
@@ -99,10 +157,39 @@ abstract class AppStrings {
     onboardingTitle3: 'Office Stationery & Corporate Supplies',
     onboardingSubtitle3: 'Full corporate office setup with stationery supplies at wholesale prices and instant approved quotations.',
 
-    // Account Type & Auth
+    // Account Type & Auth Common
     individualClient: 'Individual Account',
     corporateClient: 'Corporate & B2B Client',
     alreadyHaveAccount: 'Already have a commercial account?',
+
+    // Auth Translations (English)
+    loginHeaderTitle: 'Welcome Back',
+    loginCorporateHeaderTitle: 'Corporate Login (B2B)',
+    loginSubtitle: 'Log in to manage your orders and tech supplies',
+    emailOrPhone: 'Email / Phone Number',
+    emailOrPhoneHint: 'example@domain.com',
+    emailOrPhoneError: 'Please enter your email or phone number',
+    password: 'Password',
+    passwordError: 'Please enter your password',
+    forgotPassword: 'Forgot Password?',
+    dontHaveAccount: "Don't have an account?",
+    createNewAccount: 'Create New Account',
+
+    signUpHeaderTitle: 'New Account',
+    signUpCorporateHeaderTitle: 'Create Corporate Account (B2B)',
+    signUpSubtitleIndividual: 'Create an account to start shopping tech & office supplies',
+    signUpSubtitleCorporate: 'Create your business account to obtain tax invoices & official quotes',
+    fullName: 'Full Name',
+    fullNameError: 'Please enter your full name',
+    companyName: 'Company / Organization Name',
+    companyNameError: 'Please enter company name',
+    taxNumber: 'Tax Number (Optional)',
+    email: 'Email Address',
+    emailError: 'Please enter a valid email address',
+    phone: 'Phone Number',
+    phoneError: 'Please enter a valid phone number',
+    passwordMinError: 'Password must be at least 6 characters',
+    createAccountBtn: 'Create Account',
   };
 
   // ---------------------------------------------------------------------------
@@ -120,4 +207,4 @@ abstract class AppStrings {
       return en[key] ?? key;
     }
   }
-}
+} 

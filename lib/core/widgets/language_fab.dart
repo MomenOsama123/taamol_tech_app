@@ -4,10 +4,7 @@ import '../constants/app_colors.dart';
 class LanguageFab extends StatelessWidget {
   final VoidCallback onLanguageChanged;
 
-  const LanguageFab({
-    super.key,
-    required this.onLanguageChanged,
-  });
+  const LanguageFab({super.key, required this.onLanguageChanged});
 
   @override
   Widget build(BuildContext context) {
@@ -15,6 +12,7 @@ class LanguageFab extends StatelessWidget {
 
     return FloatingActionButton.extended(
       onPressed: onLanguageChanged,
+      tooltip: isArabic ? 'Switch to English' : 'التبديل إلى العربية',
       backgroundColor: AppColors.deepPurple,
       elevation: 4,
       icon: const Icon(

@@ -11,20 +11,16 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:taamol_tech/main.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
+  testWidgets('Onboarding advances to the next slide', (WidgetTester tester) async {
     await tester.pumpWidget(const TkamolTechApp());
+    await tester.pumpAndSettle();
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    expect(find.byType(PageView), findsOneWidget);
+    expect(find.text('التالي'), findsOneWidget);
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
+    await tester.tap(find.text('التالي'));
+    await tester.pumpAndSettle();
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    expect(find.text('الطابعات والأحبار ومستلزمات المكاتب'), findsOneWidget);
   });
 }

@@ -1,15 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:taamol_tech/core/theme/app_theme.dart';
+import 'package:taamol_tech/core/constants/app_colors.dart' show AppColors;
 import 'package:taamol_tech/features/auth/presentation/controllers/language_controller.dart';
 import 'package:taamol_tech/features/auth/presentation/screens/onboarding_screen.dart';
 
+
 void main() {
-  runApp(const TkamolTechApp());
+  runApp(const MyApp());
 }
 
-class TkamolTechApp extends StatelessWidget {
-  const TkamolTechApp({super.key});
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -20,17 +21,22 @@ class TkamolTechApp extends StatelessWidget {
           title: 'Tkamol Tech',
           debugShowCheckedModeBanner: false,
           locale: currentLocale,
-
-          // دعم اللغات والاتجاهات (RTL / LTR)
-          supportedLocales: const [Locale('ar', ''), Locale('en', '')],
-          localizationsDelegates: const [
+          
+          // إعدادات اللغات والاتجاهات (RTL / LTR)
+          supportedLocales: const [
+            Locale('ar', ''),
+            Locale('en', ''),
+          ],
+          localizationsDelegates: [
             GlobalMaterialLocalizations.delegate,
             GlobalWidgetsLocalizations.delegate,
             GlobalCupertinoLocalizations.delegate,
           ],
-
-          theme: AppTheme.lightTheme,
-          // تبدأ التجربة من الشاشة التعريفية
+          
+          theme: ThemeData(
+            primaryColor: AppColors.primaryCyan,
+            scaffoldBackgroundColor: AppColors.background,
+          ),
           home: const OnboardingScreen(),
         );
       },

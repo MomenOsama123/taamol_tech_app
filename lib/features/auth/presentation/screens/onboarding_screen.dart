@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
-import '../../../../core/constants/app_colors.dart'; //
-import '../../../../core/constants/app_strings.dart'; //
+import '../../../../core/constants/app_colors.dart'; 
+import '../../../../core/constants/app_strings.dart'; 
+import '../../../../core/widgets/language_fab.dart';
+import '../controllers/language_controller.dart';
+import 'login_screen.dart';
+import 'sign_up_screen.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -14,18 +18,30 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   int _currentIndex = 0;
   final int _totalSlides = 3;
 
+  // الانتقال لشاشة إنشاء حساب جديد عند الضغط على زر ابدأ الآن
   void _onFinishOnboarding() {
-    // الانتقال لشاشة تسجيل الدخول أو اختيار الحساب
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const SignUpScreen(),
+      ),
+    );
   }
 
+  // الانتقال المباشر لشاشة تسجيل الدخول
   void _onLoginClick() {
-    // الانتقال المباشر لشاشة تسجيل الدخول
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const LoginScreen(),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background, //
+      backgroundColor: AppColors.background, 
       body: SafeArea(
         child: Column(
           children: [
@@ -35,13 +51,15 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const SizedBox(width: 48), // موازنة المساحة
+                  LanguageFab(
+                    onLanguageChanged: LanguageController.toggleLanguage,
+                  ),
                   TextButton(
                     onPressed: _onFinishOnboarding,
                     child: Text(
                       AppStrings.tr(context, AppStrings.skip),
                       style: const TextStyle(
-                        color: AppColors.deepPurple, //
+                        color: AppColors.deepPurple, 
                         fontWeight: FontWeight.bold,
                         fontSize: 15,
                         fontFamily: 'Tajawal',
@@ -66,25 +84,25 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     title: AppStrings.tr(context, AppStrings.onboardingTitle1),
                     subtitle: AppStrings.tr(context, AppStrings.onboardingSubtitle1),
                     iconData: Icons.laptop_mac_rounded,
-                    color: AppColors.primaryCyan, //
+                    color: AppColors.primaryCyan, 
                   ),
                   _buildPage(
                     title: AppStrings.tr(context, AppStrings.onboardingTitle2),
                     subtitle: AppStrings.tr(context, AppStrings.onboardingSubtitle2),
                     iconData: Icons.print_rounded,
-                    color: AppColors.primaryGreen, //
+                    color: AppColors.primaryGreen, 
                   ),
                   _buildPage(
                     title: AppStrings.tr(context, AppStrings.onboardingTitle3),
                     subtitle: AppStrings.tr(context, AppStrings.onboardingSubtitle3),
                     iconData: Icons.inventory_2_rounded,
-                    color: AppColors.deepPurple, //
+                    color: AppColors.deepPurple, 
                   ),
                 ],
               ),
             ),
 
-            // القسم السفلي المطابق للصورة بالضبط
+            // القسم السفلي
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
               child: Column(
@@ -94,15 +112,15 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: List.generate(
                       _totalSlides,
-                          (index) => AnimatedContainer(
+                      (index) => AnimatedContainer(
                         duration: const Duration(milliseconds: 300),
                         margin: const EdgeInsets.symmetric(horizontal: 4),
                         height: 8,
                         width: _currentIndex == index ? 28 : 8,
                         decoration: BoxDecoration(
                           color: _currentIndex == index
-                              ? AppColors.primaryCyan //
-                              : AppColors.borderLight, //
+                              ? AppColors.primaryCyan 
+                              : AppColors.borderLight, 
                           borderRadius: BorderRadius.circular(10),
                         ),
                       ),
@@ -112,14 +130,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
                   // زر الإجراءات (الشرائح الأولى vs الشريحة الأخيرة)
                   if (_currentIndex == _totalSlides - 1)
-                  // زر "ابدأ الآن واستكشف المنتجات" بنفس شكل الصورة
+                    // زر "ابدأ الآن" للذهاب لشاشة إنشاء الحساب
                     SizedBox(
                       width: double.infinity,
                       height: 56,
                       child: ElevatedButton(
                         onPressed: _onFinishOnboarding,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primaryCyan, //
+                          backgroundColor: AppColors.primaryCyan, 
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(16),
                           ),
@@ -130,7 +148,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           children: [
                             const Icon(
                               Icons.bolt,
-                              color: AppColors.highlightYellow, //
+                              color: AppColors.highlightYellow, 
                               size: 22,
                             ),
                             const SizedBox(width: 8),
@@ -139,7 +157,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                               style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
-                                color: AppColors.cardWhite, //
+                                color: AppColors.cardWhite, 
                                 fontFamily: 'Tajawal',
                               ),
                             ),
@@ -149,14 +167,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                               style: TextStyle(
                                 fontSize: 11,
                                 fontWeight: FontWeight.w500,
-                                color: AppColors.cardWhite, //
+                                color: AppColors.cardWhite, 
                                 fontFamily: 'Montserrat',
                               ),
                             ),
                             const SizedBox(width: 8),
                             const Icon(
                               Icons.arrow_back,
-                              color: AppColors.cardWhite, //
+                              color: AppColors.cardWhite, 
                               size: 18,
                             ),
                           ],
@@ -164,7 +182,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       ),
                     )
                   else
-                  // زر "التالي" عادي في باقي الشرائح
+                    // زر "التالي" للتنقل بين الشرائح
                     SizedBox(
                       width: double.infinity,
                       height: 52,
@@ -176,7 +194,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           );
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primaryCyan, //
+                          backgroundColor: AppColors.primaryCyan, 
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(14),
                           ),
@@ -187,7 +205,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
-                            color: AppColors.cardWhite, //
+                            color: AppColors.cardWhite, 
                             fontFamily: 'Tajawal',
                           ),
                         ),
@@ -196,7 +214,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
                   const SizedBox(height: 14),
 
-                  // رابط تسجيل الدخول المباشر أسفل الزر (مثل الصورة)
+                  // رابط تسجيل الدخول المباشر أسفل الزر
                   if (_currentIndex == _totalSlides - 1)
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -205,7 +223,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           AppStrings.tr(context, AppStrings.alreadyHaveAccount),
                           style: const TextStyle(
                             fontSize: 12,
-                            color: AppColors.textSecondary, //
+                            color: AppColors.textSecondary, 
                             fontFamily: 'Tajawal',
                           ),
                         ),
@@ -217,7 +235,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             style: const TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.bold,
-                              color: AppColors.deepPurple, //
+                              color: AppColors.deepPurple, 
                               decoration: TextDecoration.underline,
                               fontFamily: 'Tajawal',
                             ),
@@ -250,7 +268,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             width: 170,
             height: 170,
             decoration: BoxDecoration(
-              color: AppColors.cardWhite, //
+              color: AppColors.cardWhite, 
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
@@ -279,7 +297,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             style: const TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.bold,
-              color: AppColors.deepPurple, //
+              color: AppColors.deepPurple, 
               fontFamily: 'Tajawal',
             ),
           ),
@@ -289,7 +307,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             textAlign: TextAlign.center,
             style: const TextStyle(
               fontSize: 14,
-              color: AppColors.textSecondary, //
+              color: AppColors.textSecondary, 
               height: 1.5,
               fontFamily: 'Tajawal',
             ),
