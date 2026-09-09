@@ -42,6 +42,9 @@ abstract class AppStrings {
   static const String emailOrPhone = 'emailOrPhone';
   static const String emailOrPhoneHint = 'emailOrPhoneHint';
   static const String emailOrPhoneError = 'emailOrPhoneError';
+  static const String loginEmail = 'loginEmail';
+  static const String invalidCredentials = 'invalidCredentials';
+  static const String emailNotConfirmed = 'emailNotConfirmed';
   static const String password = 'password';
   static const String passwordError = 'passwordError';
   static const String forgotPassword = 'forgotPassword';
@@ -64,6 +67,36 @@ abstract class AppStrings {
   static const String passwordMinError = 'passwordMinError';
   static const String createAccountBtn = 'createAccountBtn';
 
+  // Password recovery and shared feedback
+  static const String resetPasswordTitle = 'resetPasswordTitle';
+  static const String resetPasswordSubtitle = 'resetPasswordSubtitle';
+  static const String sendResetLink = 'sendResetLink';
+  static const String resetLinkSent = 'resetLinkSent';
+  static const String invalidEmail = 'invalidEmail';
+  static const String unexpectedError = 'unexpectedError';
+  static const String emailRequired = 'emailRequired';
+  static const String accountCreated = 'accountCreated';
+  static const String confirmEmailTitle = 'confirmEmailTitle';
+  static const String confirmEmailSentTo = 'confirmEmailSentTo';
+  static const String confirmEmailInstructions = 'confirmEmailInstructions';
+  static const String backToLogin = 'backToLogin';
+  static const String resendEmail = 'resendEmail';
+  static const String resendSuccess = 'resendSuccess';
+  static const String resendError = 'resendError';
+  static const String otpCode = 'otpCode';
+  static const String verifyOtp = 'verifyOtp';
+  static const String otpRequired = 'otpRequired';
+  static const String otpVerified = 'otpVerified';
+  static const String otpVerificationError = 'otpVerificationError';
+
+  // Main app
+  static const String products = 'products';
+  static const String noProducts = 'noProducts';
+  static const String productsLoadError = 'productsLoadError';
+  static const String retry = 'retry';
+  static const String contactUs = 'contactUs';
+  static const String profile = 'profile';
+
   // ---------------------------------------------------------------------------
   // 2. القواميس النصية للغات (Localized Dictionaries Maps)
   // ---------------------------------------------------------------------------
@@ -85,15 +118,18 @@ abstract class AppStrings {
 
     // Onboarding 1
     onboardingTitle1: 'أجهزة الحاسوب واللابتوبات',
-    onboardingSubtitle1: 'تصفح أحدث أجهزة الكمبيوتر المحمولة والمكتبية بأسعار تنافسية وحلول مخصصة للشركات والأفراد.',
+    onboardingSubtitle1:
+        'تصفح أحدث أجهزة الكمبيوتر المحمولة والمكتبية بأسعار تنافسية وحلول مخصصة للشركات والأفراد.',
 
     // Onboarding 2
     onboardingTitle2: 'الطابعات والأحبار ومستلزمات المكاتب',
-    onboardingSubtitle2: 'تأمين كامل لاحتياجات المكاتب والشركات من طابعات متطورة، أحبار أصلية، ومستلزمات القرطاسية.',
+    onboardingSubtitle2:
+        'تأمين كامل لاحتياجات المكاتب والشركات من طابعات متطورة، أحبار أصلية، ومستلزمات القرطاسية.',
 
     // Onboarding 3
     onboardingTitle3: 'الأدوات المكتبية والقرطاسية وتجهيز الشركات',
-    onboardingSubtitle3: 'تجهيز متكامل للمكاتب والشركات بكافة الأدوات المكتبية والقرطاسية بأسعار الجملة وعروض أسعار فورية معتمدة.',
+    onboardingSubtitle3:
+        'تجهيز متكامل للمكاتب والشركات بكافة الأدوات المكتبية والقرطاسية بأسعار الجملة وعروض أسعار فورية معتمدة.',
 
     // Account Type & Auth Common
     individualClient: 'حساب أفراد',
@@ -107,6 +143,9 @@ abstract class AppStrings {
     emailOrPhone: 'البريد الإلكتروني / رقم الجوال',
     emailOrPhoneHint: 'example@domain.com',
     emailOrPhoneError: 'يرجى إدخال البريد الإلكتروني أو رقم الجوال',
+    loginEmail: 'البريد الإلكتروني المستخدم في التسجيل',
+    invalidCredentials: 'البريد الإلكتروني أو كلمة المرور غير صحيحة',
+    emailNotConfirmed: 'يرجى تأكيد بريدك الإلكتروني قبل تسجيل الدخول',
     password: 'كلمة المرور',
     passwordError: 'يرجى إدخال كلمة المرور',
     forgotPassword: 'نسيت كلمة المرور؟',
@@ -116,7 +155,8 @@ abstract class AppStrings {
     signUpHeaderTitle: 'حساب جديد',
     signUpCorporateHeaderTitle: 'إنشاء حساب شركة (B2B)',
     signUpSubtitleIndividual: 'أنشئ حسابك للبدء بالتسوق وشراء مستلزماتك',
-    signUpSubtitleCorporate: 'أنشئ حساب مؤسستك للحصول على الفواتير وعروض الأسعار',
+    signUpSubtitleCorporate:
+        'أنشئ حساب مؤسستك للحصول على الفواتير وعروض الأسعار',
     fullName: 'الاسم الكامل',
     fullNameError: 'يرجى إدخال الاسم الكامل',
     companyName: 'اسم الشركة / المؤسسة',
@@ -128,6 +168,34 @@ abstract class AppStrings {
     phoneError: 'يرجى إدخال رقم جوال صحيح',
     passwordMinError: 'كلمة المرور يجب أن تكون 6 خانات على الأقل',
     createAccountBtn: 'إنشاء الحساب',
+    resetPasswordTitle: 'استعادة كلمة المرور',
+    resetPasswordSubtitle:
+        'أدخل بريدك الإلكتروني المسجل وسنرسل لك رابطًا لإعادة تعيين كلمة المرور.',
+    sendResetLink: 'إرسال رابط التعيين',
+    resetLinkSent: 'تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني',
+    invalidEmail: 'البريد الإلكتروني غير صحيح',
+    unexpectedError: 'حدث خطأ غير متوقع',
+    emailRequired: 'يرجى إدخال البريد الإلكتروني',
+    accountCreated: 'تم إنشاء الحساب. تحقق من بريدك الإلكتروني ثم سجّل الدخول.',
+    confirmEmailTitle: 'تأكيد البريد الإلكتروني',
+    confirmEmailSentTo: 'لقد أرسلنا رابط تأكيد إلى البريد الإلكتروني التالي:',
+    confirmEmailInstructions:
+        'افتح بريدك واضغط على الرابط لإكمال إنشاء الحساب.',
+    backToLogin: 'العودة لتسجيل الدخول',
+    resendEmail: 'لم يصلك البريد؟ إرسال مرة أخرى',
+    resendSuccess: 'تم إعادة إرسال رابط التأكيد بنجاح',
+    resendError: 'حدث خطأ أثناء إعادة إرسال رابط التأكيد',
+    otpCode: 'رمز التأكيد',
+    verifyOtp: 'تأكيد الرمز',
+    otpRequired: 'يرجى إدخال رمز التأكيد',
+    otpVerified: 'تم تأكيد البريد الإلكتروني بنجاح',
+    otpVerificationError: 'رمز التأكيد غير صحيح أو منتهي الصلاحية',
+    products: 'المنتجات',
+    noProducts: 'لا توجد منتجات متاحة حاليًا',
+    productsLoadError: 'حدث خطأ أثناء جلب المنتجات',
+    retry: 'إعادة المحاولة',
+    contactUs: 'تواصل معنا',
+    profile: 'حسابي',
   };
 
   static const Map<String, String> en = {
@@ -147,15 +215,18 @@ abstract class AppStrings {
 
     // Onboarding 1
     onboardingTitle1: 'Computers & Laptops',
-    onboardingSubtitle1: 'Browse high-performance laptops and workstations at competitive prices for enterprise and personal use.',
+    onboardingSubtitle1:
+        'Browse high-performance laptops and workstations at competitive prices for enterprise and personal use.',
 
     // Onboarding 2
     onboardingTitle2: 'Printers, Toners & Supplies',
-    onboardingSubtitle2: 'Complete supply of enterprise printers, 100% genuine toners, and full office stationery.',
+    onboardingSubtitle2:
+        'Complete supply of enterprise printers, 100% genuine toners, and full office stationery.',
 
     // Onboarding 3
     onboardingTitle3: 'Office Stationery & Corporate Supplies',
-    onboardingSubtitle3: 'Full corporate office setup with stationery supplies at wholesale prices and instant approved quotations.',
+    onboardingSubtitle3:
+        'Full corporate office setup with stationery supplies at wholesale prices and instant approved quotations.',
 
     // Account Type & Auth Common
     individualClient: 'Individual Account',
@@ -169,6 +240,9 @@ abstract class AppStrings {
     emailOrPhone: 'Email / Phone Number',
     emailOrPhoneHint: 'example@domain.com',
     emailOrPhoneError: 'Please enter your email or phone number',
+    loginEmail: 'Email used during registration',
+    invalidCredentials: 'The email or password is incorrect',
+    emailNotConfirmed: 'Please confirm your email before logging in',
     password: 'Password',
     passwordError: 'Please enter your password',
     forgotPassword: 'Forgot Password?',
@@ -177,8 +251,10 @@ abstract class AppStrings {
 
     signUpHeaderTitle: 'New Account',
     signUpCorporateHeaderTitle: 'Create Corporate Account (B2B)',
-    signUpSubtitleIndividual: 'Create an account to start shopping tech & office supplies',
-    signUpSubtitleCorporate: 'Create your business account to obtain tax invoices & official quotes',
+    signUpSubtitleIndividual:
+        'Create an account to start shopping tech & office supplies',
+    signUpSubtitleCorporate:
+        'Create your business account to obtain tax invoices & official quotes',
     fullName: 'Full Name',
     fullNameError: 'Please enter your full name',
     companyName: 'Company / Organization Name',
@@ -190,6 +266,34 @@ abstract class AppStrings {
     phoneError: 'Please enter a valid phone number',
     passwordMinError: 'Password must be at least 6 characters',
     createAccountBtn: 'Create Account',
+    resetPasswordTitle: 'Reset Password',
+    resetPasswordSubtitle:
+        'Enter your registered email and we will send you a password reset link.',
+    sendResetLink: 'Send Reset Link',
+    resetLinkSent: 'A password reset link was sent to your email',
+    invalidEmail: 'Invalid email address',
+    unexpectedError: 'An unexpected error occurred',
+    emailRequired: 'Please enter your email address',
+    accountCreated: 'Account created. Check your email, then log in.',
+    confirmEmailTitle: 'Verify Your Email',
+    confirmEmailSentTo: 'We sent a verification link to:',
+    confirmEmailInstructions:
+        'Check your inbox and click the link to confirm your account.',
+    backToLogin: 'Back to Login',
+    resendEmail: "Didn't receive the email? Resend",
+    resendSuccess: 'The confirmation link was sent again',
+    resendError: 'Could not resend the confirmation link',
+    otpCode: 'Confirmation code',
+    verifyOtp: 'Verify Code',
+    otpRequired: 'Please enter the confirmation code',
+    otpVerified: 'Email verified successfully',
+    otpVerificationError: 'The confirmation code is invalid or expired',
+    products: 'Products',
+    noProducts: 'No products available yet',
+    productsLoadError: 'Error loading products',
+    retry: 'Try again',
+    contactUs: 'Contact Us',
+    profile: 'Profile',
   };
 
   // ---------------------------------------------------------------------------
@@ -207,4 +311,4 @@ abstract class AppStrings {
       return en[key] ?? key;
     }
   }
-} 
+}

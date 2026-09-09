@@ -17,6 +17,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   String _userRole = 'User';
   String _userEmail = '';
   bool _isLoading = true;
+  bool _isSigningOut = false;
 
   @override
   void initState() {
@@ -68,13 +69,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   // تنفيذ تسجيل الخروج من Supabase
   Future<void> _signOut() async {
-    await Supabase.instance.client.auth.signOut();
-    if (mounted) {
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (_) => const LoginScreen()),
-        (route) => false,
-      );
+    if (_isSigningOut) return;
+    setState(() => _isSigningOut = true);
+
+    try {
+      await Supabase.instance.client.auth.signOut();
+      if (mounted) {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (_) => const LoginScreen()),
+          (route) => false,
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isSigningOut = false);
     }
   }
 
@@ -399,19 +407,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       width: double.infinity,
                       height: 54,
                       child: OutlinedButton.icon(
-                        onPressed: _signOut,
+                        onPressed: _isSigningOut ? null : _signOut,
                         icon: const Icon(
                           Icons.logout_rounded,
                           color: Color(0xFFE11D48),
                         ),
-                        label: Text(
-                          isArabic ? 'تسجيل الخروج' : 'Log Out',
-                          style: const TextStyle(
-                            color: Color(0xFFE11D48),
-                            fontFamily: 'Tajawal',
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+                        label: _isSigningOut
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : Text(
+                                isArabic ? 'تسجيل الخروج' : 'Log Out',
+                                style: const TextStyle(
+                                  color: Color(0xFFE11D48),
+                                  fontFamily: 'Tajawal',
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                         style: OutlinedButton.styleFrom(
                           side: const BorderSide(
                             color: Color(0xFFE11D48),

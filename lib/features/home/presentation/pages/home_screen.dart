@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:taamol_tech/core/constants/app_colors.dart';
+import 'package:taamol_tech/core/constants/app_strings.dart';
 import 'package:taamol_tech/features/products/data/models/product_model.dart';
 import 'package:taamol_tech/main.dart';
 
@@ -35,10 +36,15 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _refreshProducts() async {
     final future = _loadProducts();
+    if (!mounted) return;
     setState(() {
       _productsFuture = future;
     });
-    await future;
+    try {
+      await future;
+    } catch (_) {
+      // FutureBuilder displays the retry state.
+    }
   }
 
   @override
@@ -51,7 +57,7 @@ class _HomeScreenState extends State<HomeScreen> {
         backgroundColor: AppColors.cardWhite,
         elevation: 0,
         title: Text(
-          isArabic ? 'المنتجات' : 'Products',
+          AppStrings.tr(context, AppStrings.products),
           style: const TextStyle(
             color: AppColors.deepPurple,
             fontWeight: FontWeight.bold,
@@ -72,19 +78,15 @@ class _HomeScreenState extends State<HomeScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    isArabic
-                        ? 'حدث خطأ أثناء جلب المنتجات'
-                        : 'Error loading products',
+                    AppStrings.tr(context, AppStrings.productsLoadError),
                     textAlign: TextAlign.center,
                     style: const TextStyle(fontSize: 14),
                   ),
                   const SizedBox(height: 12),
                   OutlinedButton.icon(
-                    onPressed: () {
-                      _refreshProducts();
-                    },
+                    onPressed: _refreshProducts,
                     icon: const Icon(Icons.refresh),
-                    label: Text(isArabic ? 'إعادة المحاولة' : 'Try again'),
+                    label: Text(AppStrings.tr(context, AppStrings.retry)),
                   ),
                 ],
               ),
@@ -103,9 +105,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     height: MediaQuery.sizeOf(context).height * 0.65,
                     child: Center(
                       child: Text(
-                        isArabic
-                            ? 'لا توجد منتجات متاحة حاليًا'
-                            : 'No products available yet',
+                        AppStrings.tr(context, AppStrings.noProducts),
                         style: const TextStyle(
                           color: AppColors.textSecondary,
                           fontFamily: 'Tajawal',

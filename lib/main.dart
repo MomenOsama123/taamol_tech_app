@@ -6,7 +6,7 @@ import 'package:taamol_tech/core/theme/app_theme.dart';
 import 'package:taamol_tech/features/auth/presentation/controllers/language_controller.dart';
 import 'package:taamol_tech/features/auth/presentation/screens/login_screen.dart';
 import 'package:taamol_tech/features/auth/presentation/screens/onboarding_screen.dart';
-import 'package:taamol_tech/features/products/presentation/pages/main_screen.dart';
+import 'package:taamol_tech/features/home/presentation/pages/main_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();

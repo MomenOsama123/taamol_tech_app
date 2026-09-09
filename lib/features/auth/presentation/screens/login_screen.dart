@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_strings.dart';
-import '../../../products/presentation/pages/main_screen.dart';
+import 'forget_password_screen.dart';
+import '../../../home/presentation/pages/main_screen.dart';
 import 'sign_up_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -34,8 +35,8 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final email = _emailController.text.trim();
-      final password = _passwordController.text.trim();
+      final email = _emailController.text.trim().toLowerCase();
+      final password = _passwordController.text;
 
       // طلب تسجيل الدخول من سيرفر Supabase
       final response = await Supabase.instance.client.auth.signInWithPassword(
@@ -52,15 +53,22 @@ class _LoginScreenState extends State<LoginScreen> {
       }
     } on AuthException catch (error) {
       if (mounted) {
+        final message = error.message.toLowerCase().contains('not confirmed')
+            ? AppStrings.tr(context, AppStrings.emailNotConfirmed)
+            : error.message.toLowerCase().contains('invalid login')
+            ? AppStrings.tr(context, AppStrings.invalidCredentials)
+            : error.message;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(error.message), backgroundColor: Colors.red),
+          SnackBar(content: Text(message), backgroundColor: Colors.red),
         );
       }
     } catch (error) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('حدث خطأ غير متوقع: $error'),
+            content: Text(
+              '${AppStrings.tr(context, AppStrings.unexpectedError)}: $error',
+            ),
             backgroundColor: Colors.red,
           ),
         );
@@ -69,31 +77,6 @@ class _LoginScreenState extends State<LoginScreen> {
       if (mounted) {
         setState(() => _isLoading = false);
       }
-    }
-  }
-
-  Future<void> _handleForgotPassword() async {
-    final email = _emailController.text.trim();
-    if (!email.contains('@')) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(AppStrings.tr(context, AppStrings.emailOrPhoneError)),
-        ),
-      );
-      return;
-    }
-
-    try {
-      await Supabase.instance.client.auth.resetPasswordForEmail(email);
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('تم إرسال رابط إعادة تعيين كلمة المرور')),
-      );
-    } on AuthException catch (error) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error.message), backgroundColor: Colors.red),
-      );
     }
   }
 
@@ -144,8 +127,9 @@ class _LoginScreenState extends State<LoginScreen> {
                 TextFormField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
+                  textInputAction: TextInputAction.next,
                   decoration: InputDecoration(
-                    labelText: AppStrings.tr(context, AppStrings.emailOrPhone),
+                    labelText: AppStrings.tr(context, AppStrings.loginEmail),
                     hintText: AppStrings.tr(
                       context,
                       AppStrings.emailOrPhoneHint,
@@ -177,6 +161,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 TextFormField(
                   controller: _passwordController,
                   obscureText: !_isPasswordVisible,
+                  textInputAction: TextInputAction.done,
                   decoration: InputDecoration(
                     labelText: AppStrings.tr(context, AppStrings.password),
                     prefixIcon: const Icon(
@@ -215,7 +200,14 @@ class _LoginScreenState extends State<LoginScreen> {
                 Align(
                   alignment: Alignment.centerLeft,
                   child: TextButton(
-                    onPressed: _handleForgotPassword,
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const ForgotPasswordScreen(),
+                        ),
+                      );
+                    },
                     child: Text(
                       AppStrings.tr(context, AppStrings.forgotPassword),
                       style: const TextStyle(

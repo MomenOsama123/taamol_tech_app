@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:taamol_tech/core/constants/app_colors.dart';
+import 'package:taamol_tech/core/constants/app_strings.dart';
 import 'package:taamol_tech/features/products/presentation/pages/contact_us_screen.dart';
-import 'package:taamol_tech/features/products/presentation/pages/home_screen.dart';
+import 'package:taamol_tech/features/home/presentation/pages/home_screen.dart';
 import 'package:taamol_tech/features/products/presentation/pages/profile_screen.dart';
 
 class MainScreen extends StatefulWidget {
@@ -22,13 +23,8 @@ class _MainScreenState extends State<MainScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final bool isArabic = Localizations.localeOf(context).languageCode == 'ar';
-
     return Scaffold(
-      body: IndexedStack(
-        index: _currentIndex,
-        children: _pages,
-      ),
+      body: IndexedStack(index: _currentIndex, children: _pages),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
         selectedItemColor: AppColors.primaryCyan,
@@ -43,17 +39,17 @@ class _MainScreenState extends State<MainScreen> {
           BottomNavigationBarItem(
             icon: const Icon(Icons.grid_view_outlined),
             activeIcon: const Icon(Icons.grid_view),
-            label: isArabic ? 'المنتجات' : 'Products',
+            label: AppStrings.tr(context, AppStrings.products),
           ),
           BottomNavigationBarItem(
             icon: const Icon(Icons.support_agent_outlined),
             activeIcon: const Icon(Icons.support_agent),
-            label: isArabic ? 'تواصل معنا' : 'Contact Us',
+            label: AppStrings.tr(context, AppStrings.contactUs),
           ),
           BottomNavigationBarItem(
             icon: const Icon(Icons.person_outline),
             activeIcon: const Icon(Icons.person),
-            label: isArabic ? 'حسابي' : 'Profile',
+            label: AppStrings.tr(context, AppStrings.profile),
           ),
         ],
       ),

@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_strings.dart';
-import '../../../products/presentation/pages/main_screen.dart';
+import '../../../home/presentation/pages/main_screen.dart';
+import 'email_confirmation_screen.dart';
 import 'login_screen.dart';
 
 class SignUpScreen extends StatefulWidget {
@@ -43,7 +44,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
     try {
       final email = _emailController.text.trim();
-      final password = _passwordController.text.trim();
+      final password = _passwordController.text;
 
       // تجميع البيانات الإضافية وحفظها في user_metadata
       final Map<String, dynamic> userMetadata = {
@@ -70,17 +71,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
           (route) => false,
         );
       } else if (mounted && response.user != null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'تم إنشاء الحساب. تحقق من بريدك الإلكتروني ثم سجّل الدخول.',
-            ),
-          ),
-        );
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (_) => LoginScreen(isCorporate: widget.isCorporate),
+            builder: (_) => EmailConfirmationScreen(email: email),
           ),
         );
       }
@@ -94,7 +88,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('حدث خطأ غير متوقع: $error'),
+            content: Text(
+              '${AppStrings.tr(context, AppStrings.unexpectedError)}: $error',
+            ),
             backgroundColor: Colors.red,
           ),
         );
