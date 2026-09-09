@@ -61,9 +61,9 @@ class ProductCard extends StatelessWidget {
                           color: AppColors.primaryGreen,
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: const Text(
-                          'B2B',
-                          style: TextStyle(
+                        child: Text(
+                          isArabic ? 'شركات' : 'B2B',
+                          style: const TextStyle(
                             color: Colors.white,
                             fontSize: 10,
                             fontWeight: FontWeight.bold,

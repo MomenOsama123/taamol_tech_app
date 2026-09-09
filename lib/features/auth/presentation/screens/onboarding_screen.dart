@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../../../core/constants/app_colors.dart'; 
-import '../../../../core/constants/app_strings.dart'; 
+import '../../../../core/constants/app_colors.dart';
+import '../../../../core/constants/app_strings.dart';
 import '../../../../core/widgets/language_fab.dart';
 import '../controllers/language_controller.dart';
 import 'login_screen.dart';
@@ -22,9 +22,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   void _onFinishOnboarding() {
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(
-        builder: (_) => const SignUpScreen(),
-      ),
+      MaterialPageRoute(builder: (_) => const SignUpScreen()),
     );
   }
 
@@ -32,16 +30,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   void _onLoginClick() {
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(
-        builder: (_) => const LoginScreen(),
-      ),
+      MaterialPageRoute(builder: (_) => const LoginScreen()),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background, 
+      backgroundColor: AppColors.background,
       body: SafeArea(
         child: Column(
           children: [
@@ -59,7 +55,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     child: Text(
                       AppStrings.tr(context, AppStrings.skip),
                       style: const TextStyle(
-                        color: AppColors.deepPurple, 
+                        color: AppColors.deepPurple,
                         fontWeight: FontWeight.bold,
                         fontSize: 15,
                         fontFamily: 'Tajawal',
@@ -82,21 +78,30 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 children: [
                   _buildPage(
                     title: AppStrings.tr(context, AppStrings.onboardingTitle1),
-                    subtitle: AppStrings.tr(context, AppStrings.onboardingSubtitle1),
+                    subtitle: AppStrings.tr(
+                      context,
+                      AppStrings.onboardingSubtitle1,
+                    ),
                     iconData: Icons.laptop_mac_rounded,
-                    color: AppColors.primaryCyan, 
+                    color: AppColors.primaryCyan,
                   ),
                   _buildPage(
                     title: AppStrings.tr(context, AppStrings.onboardingTitle2),
-                    subtitle: AppStrings.tr(context, AppStrings.onboardingSubtitle2),
+                    subtitle: AppStrings.tr(
+                      context,
+                      AppStrings.onboardingSubtitle2,
+                    ),
                     iconData: Icons.print_rounded,
-                    color: AppColors.primaryGreen, 
+                    color: AppColors.primaryGreen,
                   ),
                   _buildPage(
                     title: AppStrings.tr(context, AppStrings.onboardingTitle3),
-                    subtitle: AppStrings.tr(context, AppStrings.onboardingSubtitle3),
+                    subtitle: AppStrings.tr(
+                      context,
+                      AppStrings.onboardingSubtitle3,
+                    ),
                     iconData: Icons.inventory_2_rounded,
-                    color: AppColors.deepPurple, 
+                    color: AppColors.deepPurple,
                   ),
                 ],
               ),
@@ -119,8 +124,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         width: _currentIndex == index ? 28 : 8,
                         decoration: BoxDecoration(
                           color: _currentIndex == index
-                              ? AppColors.primaryCyan 
-                              : AppColors.borderLight, 
+                              ? AppColors.primaryCyan
+                              : AppColors.borderLight,
                           borderRadius: BorderRadius.circular(10),
                         ),
                       ),
@@ -137,7 +142,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       child: ElevatedButton(
                         onPressed: _onFinishOnboarding,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primaryCyan, 
+                          backgroundColor: AppColors.primaryCyan,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(16),
                           ),
@@ -147,34 +152,27 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             const Icon(
-                              Icons.bolt,
-                              color: AppColors.highlightYellow, 
+                              Icons.bolt_rounded,
+                              color: AppColors.highlightYellow,
                               size: 22,
                             ),
                             const SizedBox(width: 8),
                             Text(
-                              AppStrings.tr(context, AppStrings.getStartedProducts),
+                              AppStrings.tr(
+                                context,
+                                AppStrings.getStartedProducts,
+                              ),
                               style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
-                                color: AppColors.cardWhite, 
+                                color: AppColors.cardWhite,
                                 fontFamily: 'Tajawal',
                               ),
                             ),
                             const SizedBox(width: 8),
-                            const Text(
-                              'Get Started',
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w500,
-                                color: AppColors.cardWhite, 
-                                fontFamily: 'Montserrat',
-                              ),
-                            ),
-                            const SizedBox(width: 8),
                             const Icon(
-                              Icons.arrow_back,
-                              color: AppColors.cardWhite, 
+                              Icons.arrow_back_rounded,
+                              color: AppColors.cardWhite,
                               size: 18,
                             ),
                           ],
@@ -194,7 +192,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           );
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primaryCyan, 
+                          backgroundColor: AppColors.primaryCyan,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(14),
                           ),
@@ -205,7 +203,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
-                            color: AppColors.cardWhite, 
+                            color: AppColors.cardWhite,
                             fontFamily: 'Tajawal',
                           ),
                         ),
@@ -223,7 +221,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           AppStrings.tr(context, AppStrings.alreadyHaveAccount),
                           style: const TextStyle(
                             fontSize: 12,
-                            color: AppColors.textSecondary, 
+                            color: AppColors.textSecondary,
                             fontFamily: 'Tajawal',
                           ),
                         ),
@@ -235,7 +233,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             style: const TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.bold,
-                              color: AppColors.deepPurple, 
+                              color: AppColors.deepPurple,
                               decoration: TextDecoration.underline,
                               fontFamily: 'Tajawal',
                             ),
@@ -268,7 +266,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             width: 170,
             height: 170,
             decoration: BoxDecoration(
-              color: AppColors.cardWhite, 
+              color: AppColors.cardWhite,
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
@@ -297,7 +295,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             style: const TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.bold,
-              color: AppColors.deepPurple, 
+              color: AppColors.deepPurple,
               fontFamily: 'Tajawal',
             ),
           ),
@@ -307,7 +305,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             textAlign: TextAlign.center,
             style: const TextStyle(
               fontSize: 14,
-              color: AppColors.textSecondary, 
+              color: AppColors.textSecondary,
               height: 1.5,
               fontFamily: 'Tajawal',
             ),

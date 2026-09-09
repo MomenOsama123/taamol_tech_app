@@ -11,7 +11,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:taamol_tech/main.dart';
 
 void main() {
-  testWidgets('Onboarding advances to the next slide', (WidgetTester tester) async {
+  testWidgets('Onboarding advances to the next slide', (
+    WidgetTester tester,
+  ) async {
     await tester.pumpWidget(const TkamolTechApp());
     await tester.pumpAndSettle();
 

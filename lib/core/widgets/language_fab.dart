@@ -21,7 +21,7 @@ class LanguageFab extends StatelessWidget {
         size: 22,
       ),
       label: Text(
-        isArabic ? 'English' : 'عربي',
+        isArabic ? 'English' : 'العربية',
         style: const TextStyle(
           color: AppColors.cardWhite,
           fontWeight: FontWeight.bold,

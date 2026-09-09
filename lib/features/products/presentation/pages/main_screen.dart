@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:taamol_tech/core/constants/app_colors.dart';
+import 'package:taamol_tech/features/products/presentation/pages/contact_us_screen.dart';
 import 'package:taamol_tech/features/products/presentation/pages/home_screen.dart';
+import 'package:taamol_tech/features/products/presentation/pages/profile_screen.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -14,8 +16,8 @@ class _MainScreenState extends State<MainScreen> {
 
   final List<Widget> _pages = [
     const HomeScreen(),
-    const Center(child: Text('صفحة التواصل والمساعدة / Contact Us')),
-    const Center(child: Text('الإعدادات والحساب / Settings')),
+    const ContactUsScreen(),
+    const ProfileScreen(),
   ];
 
   @override

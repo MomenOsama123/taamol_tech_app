@@ -20,22 +20,20 @@ class _MainWrapperScreenState extends State<MainWrapperScreen> {
     Icons.person_outline_rounded,
   ];
 
-  // قائمة الشاشات المرتبطة بكل Tab
-  final List<Widget> _screens = const [
-    Center(child: Text('الرئيسية / Catalog')),
-    Center(child: Text('الأقسام / Categories')),
-    Center(child: Text('السلة وعروض الأسعار / Cart & Quotes')),
-    Center(child: Text('الحساب الشخصي / Profile')),
-  ];
-
   @override
   Widget build(BuildContext context) {
+    final bool isArabic = Localizations.localeOf(context).languageCode == 'ar';
+
+    final List<Widget> screens = [
+      Center(child: Text(isArabic ? 'الرئيسية' : 'Home')),
+      Center(child: Text(isArabic ? 'الأقسام' : 'Categories')),
+      Center(child: Text(isArabic ? 'السلة وعروض الأسعار' : 'Cart & Quotes')),
+      Center(child: Text(isArabic ? 'الحساب الشخصي' : 'Profile')),
+    ];
+
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: IndexedStack(
-        index: _bottomNavIndex,
-        children: _screens,
-      ),
+      body: IndexedStack(index: _bottomNavIndex, children: screens),
 
       // الزر الأوسط العائم (Docked FAB)
       floatingActionButton: FloatingActionButton(
@@ -45,7 +43,11 @@ class _MainWrapperScreenState extends State<MainWrapperScreen> {
         backgroundColor: AppColors.primaryCyan,
         elevation: 4,
         shape: const CircleBorder(),
-        child: const Icon(Icons.qr_code_scanner_rounded, color: Colors.white, size: 28),
+        child: const Icon(
+          Icons.qr_code_scanner_rounded,
+          color: Colors.white,
+          size: 28,
+        ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
 
@@ -60,7 +62,7 @@ class _MainWrapperScreenState extends State<MainWrapperScreen> {
         activeColor: AppColors.primaryCyan,
         inactiveColor: Colors.white60,
         iconSize: 26,
-        
+
         onTap: (index) => setState(() => _bottomNavIndex = index),
       ),
     );
