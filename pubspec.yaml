@@ -53,6 +53,7 @@ dependencies:
   animated_bottom_navigation_bar: ^1.4.1
   google_fonts: ^8.1.0
   introduction_screen: ^4.0.0
+  supabase_flutter: ^2.17.2
   
 
 dev_dependencies:
