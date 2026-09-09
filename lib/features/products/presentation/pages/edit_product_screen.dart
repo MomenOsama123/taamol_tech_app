@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:taamol_tech/core/constants/app_colors.dart';
 import 'package:taamol_tech/core/widgets/custom_button.dart';
 import 'package:taamol_tech/core/widgets/custom_text_field.dart';
-import 'package:taamol_tech/features/products/data/mock_products.dart';
 import 'package:taamol_tech/features/products/data/models/product_model.dart';
 
 class EditProductScreen extends StatefulWidget {
@@ -58,6 +58,7 @@ class _EditProductScreenState extends State<EditProductScreen> {
     super.dispose();
   }
 
+  // دالة حفظ أو تحديث بيانات المنتج في Supabase
   Future<void> _saveProduct() async {
     if (_isSaving || !_formKey.currentState!.validate()) return;
 
@@ -65,37 +66,60 @@ class _EditProductScreenState extends State<EditProductScreen> {
     if (price == null || price < 0) return;
 
     setState(() => _isSaving = true);
-    await Future<void>.delayed(Duration.zero);
-    if (!mounted) return;
 
-    {
+    try {
+      final supabase = Supabase.instance.client;
+
+      final productData = {
+        'name_ar': _nameArController.text.trim(),
+        'name_en': _nameEnController.text.trim().isEmpty 
+            ? _nameArController.text.trim() 
+            : _nameEnController.text.trim(),
+        'description_ar': _descArController.text.trim(),
+        'description_en': _descArController.text.trim(),
+        'price': price,
+        'category': _selectedCategory,
+        'is_available': _isAvailable,
+        'is_b2b_available': _isB2BAvailable,
+        'image_url': widget.product?.imageUrl ?? 'https://via.placeholder.com/200',
+      };
+
       if (widget.product != null) {
-        // تعديل المنتج الحالي في قائمة الـ Mock Data
-        widget.product!.nameAr = _nameArController.text;
-        widget.product!.nameEn = _nameEnController.text;
-        widget.product!.price = price;
-        widget.product!.descriptionAr = _descArController.text;
-        widget.product!.isAvailable = _isAvailable;
-        widget.product!.isB2BAvailable = _isB2BAvailable;
-        widget.product!.category = _selectedCategory;
+        // تحديث المنتج الحالي في جدول products بناءً على id
+        await supabase
+            .from('products')
+            .update(productData)
+            .eq('id', widget.product!.id);
       } else {
-        // إضافة منتج جديد للقائمة
-        final newProduct = ProductModel(
-          id: DateTime.now().millisecondsSinceEpoch.toString(),
-          nameAr: _nameArController.text,
-          nameEn: _nameEnController.text,
-          descriptionAr: _descArController.text,
-          descriptionEn: _descArController.text,
-          price: price,
-          category: _selectedCategory,
-          imageUrl: 'https://via.placeholder.com/200',
-          isAvailable: _isAvailable,
-          isB2BAvailable: _isB2BAvailable,
-        );
-        mockProducts.add(newProduct);
+        // إضافة منتج جديد لجدول products
+        await supabase.from('products').insert(productData);
       }
 
-      Navigator.pop(context, true); // العودة مع إرسال إشارة للتحديث
+      if (mounted) {
+        Navigator.pop(context, true); // العودة وإعلام القائمة بالتحديث
+      }
+    } on PostgrestException catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(error.message),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('حدث خطأ غير متوقع: $error'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isSaving = false);
+      }
     }
   }
 
@@ -131,7 +155,7 @@ class _EditProductScreenState extends State<EditProductScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // اسم المنتج بالحرية
+              // اسم المنتج بالعربي
               CustomTextField(
                 controller: _nameArController,
                 labelText: 'اسم المنتج (بالعربي)',
@@ -190,7 +214,7 @@ class _EditProductScreenState extends State<EditProductScreen> {
               ),
               const SizedBox(height: 20),
 
-              // 🟢 مفتاح حالة توفر المنتج (متاح / غير متاح)
+              // مفتاح حالة توفر المنتج (متاح / غير متاح)
               Card(
                 color: AppColors.cardWhite,
                 child: SwitchListTile(
@@ -204,11 +228,11 @@ class _EditProductScreenState extends State<EditProductScreen> {
                   subtitle: Text(
                     _isAvailable
                         ? (isArabic
-                              ? 'المنتج متاح حالياً للمستخدمين'
-                              : 'Currently Available')
+                            ? 'المنتج متاح حالياً للمستخدمين'
+                            : 'Currently Available')
                         : (isArabic
-                              ? 'المنتج غير متاح (نفذت الكمية)'
-                              : 'Out of Stock'),
+                            ? 'المنتج غير متاح (نفذت الكمية)'
+                            : 'Out of Stock'),
                     style: TextStyle(
                       color: _isAvailable ? Colors.green : Colors.red,
                       fontSize: 12,

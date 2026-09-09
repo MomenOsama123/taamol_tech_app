@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/widgets/language_fab.dart';
@@ -19,7 +20,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final int _totalSlides = 3;
 
   // الانتقال لشاشة إنشاء حساب جديد عند الضغط على زر ابدأ الآن
-  void _onFinishOnboarding() {
+  Future<void> _onFinishOnboarding() async {
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.setBool('onboarding_completed', true);
+    if (!mounted) return;
+
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(builder: (_) => const SignUpScreen()),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../products/presentation/pages/main_screen.dart';
@@ -17,12 +18,83 @@ class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isPasswordVisible = false;
+  bool _isLoading = false; // حالة التحميل أثناء الاتصال بالسيرفر
 
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
+  }
+
+  // دالة تسجيل الدخول باستخدام Supabase
+  Future<void> _handleLogin() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => _isLoading = true);
+
+    try {
+      final email = _emailController.text.trim();
+      final password = _passwordController.text.trim();
+
+      // طلب تسجيل الدخول من سيرفر Supabase
+      final response = await Supabase.instance.client.auth.signInWithPassword(
+        email: email,
+        password: password,
+      );
+
+      if (mounted && response.user != null) {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => const MainScreen()),
+          (route) => false,
+        );
+      }
+    } on AuthException catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(error.message), backgroundColor: Colors.red),
+        );
+      }
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('حدث خطأ غير متوقع: $error'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  Future<void> _handleForgotPassword() async {
+    final email = _emailController.text.trim();
+    if (!email.contains('@')) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(AppStrings.tr(context, AppStrings.emailOrPhoneError)),
+        ),
+      );
+      return;
+    }
+
+    try {
+      await Supabase.instance.client.auth.resetPasswordForEmail(email);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('تم إرسال رابط إعادة تعيين كلمة المرور')),
+      );
+    } on AuthException catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error.message), backgroundColor: Colors.red),
+      );
+    }
   }
 
   @override
@@ -45,7 +117,10 @@ class _LoginScreenState extends State<LoginScreen> {
                 // العنوان والوصف
                 Text(
                   widget.isCorporate
-                      ? AppStrings.tr(context, AppStrings.loginCorporateHeaderTitle)
+                      ? AppStrings.tr(
+                          context,
+                          AppStrings.loginCorporateHeaderTitle,
+                        )
                       : AppStrings.tr(context, AppStrings.loginHeaderTitle),
                   style: const TextStyle(
                     fontSize: 26,
@@ -65,14 +140,20 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 36),
 
-                // حقل البريد أو الجوال
+                // حقل البريد
                 TextFormField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
                   decoration: InputDecoration(
                     labelText: AppStrings.tr(context, AppStrings.emailOrPhone),
-                    hintText: AppStrings.tr(context, AppStrings.emailOrPhoneHint),
-                    prefixIcon: const Icon(Icons.email_outlined, color: AppColors.primaryCyan),
+                    hintText: AppStrings.tr(
+                      context,
+                      AppStrings.emailOrPhoneHint,
+                    ),
+                    prefixIcon: const Icon(
+                      Icons.email_outlined,
+                      color: AppColors.primaryCyan,
+                    ),
                     filled: true,
                     fillColor: AppColors.cardWhite,
                     border: OutlineInputBorder(
@@ -82,7 +163,10 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
-                      return AppStrings.tr(context, AppStrings.emailOrPhoneError);
+                      return AppStrings.tr(
+                        context,
+                        AppStrings.emailOrPhoneError,
+                      );
                     }
                     return null;
                   },
@@ -95,10 +179,15 @@ class _LoginScreenState extends State<LoginScreen> {
                   obscureText: !_isPasswordVisible,
                   decoration: InputDecoration(
                     labelText: AppStrings.tr(context, AppStrings.password),
-                    prefixIcon: const Icon(Icons.lock_outline, color: AppColors.primaryCyan),
+                    prefixIcon: const Icon(
+                      Icons.lock_outline,
+                      color: AppColors.primaryCyan,
+                    ),
                     suffixIcon: IconButton(
                       icon: Icon(
-                        _isPasswordVisible ? Icons.visibility_off : Icons.visibility,
+                        _isPasswordVisible
+                            ? Icons.visibility_off
+                            : Icons.visibility,
                         color: Colors.grey,
                       ),
                       onPressed: () {
@@ -126,7 +215,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 Align(
                   alignment: Alignment.centerLeft,
                   child: TextButton(
-                    onPressed: () {},
+                    onPressed: _handleForgotPassword,
                     child: Text(
                       AppStrings.tr(context, AppStrings.forgotPassword),
                       style: const TextStyle(
@@ -144,18 +233,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   width: double.infinity,
                   height: 52,
                   child: ElevatedButton(
-                    onPressed: () {
-                      if (_formKey.currentState!.validate()) {
-                        // TODO: Auth Logic
-                        // عند الضغط على زر تسجيل الدخول أو إنشاء الحساب:
-Navigator.pushReplacement(
-  context,
-  MaterialPageRoute(
-    builder: (context) => const MainScreen(),
-  ),
-);
-                      }
-                    },
+                    onPressed: _isLoading ? null : _handleLogin,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primaryCyan,
                       shape: RoundedRectangleBorder(
@@ -163,15 +241,17 @@ Navigator.pushReplacement(
                       ),
                       elevation: 0,
                     ),
-                    child: Text(
-                      AppStrings.tr(context, AppStrings.loginText),
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                        fontFamily: 'Tajawal',
-                      ),
-                    ),
+                    child: _isLoading
+                        ? const CircularProgressIndicator(color: Colors.white)
+                        : Text(
+                            AppStrings.tr(context, AppStrings.loginText),
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                              fontFamily: 'Tajawal',
+                            ),
+                          ),
                   ),
                 ),
                 const SizedBox(height: 30),
@@ -182,14 +262,18 @@ Navigator.pushReplacement(
                   children: [
                     Text(
                       AppStrings.tr(context, AppStrings.dontHaveAccount),
-                      style: TextStyle(color: Colors.grey[600], fontFamily: 'Tajawal'),
+                      style: TextStyle(
+                        color: Colors.grey[600],
+                        fontFamily: 'Tajawal',
+                      ),
                     ),
                     TextButton(
                       onPressed: () {
                         Navigator.pushReplacement(
                           context,
                           MaterialPageRoute(
-                            builder: (_) => SignUpScreen(isCorporate: widget.isCorporate),
+                            builder: (_) =>
+                                SignUpScreen(isCorporate: widget.isCorporate),
                           ),
                         );
                       },

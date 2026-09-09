@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_strings.dart';
+import '../../../products/presentation/pages/main_screen.dart';
 import 'login_screen.dart';
 
 class SignUpScreen extends StatefulWidget {
@@ -20,6 +22,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isPasswordVisible = false;
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -30,6 +33,77 @@ class _SignUpScreenState extends State<SignUpScreen> {
     _phoneController.dispose();
     _passwordController.dispose();
     super.dispose();
+  }
+
+  // دالة إنشاء الحساب باستخدام Supabase Auth
+  Future<void> _handleSignUp() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => _isLoading = true);
+
+    try {
+      final email = _emailController.text.trim();
+      final password = _passwordController.text.trim();
+
+      // تجميع البيانات الإضافية وحفظها في user_metadata
+      final Map<String, dynamic> userMetadata = {
+        'full_name': _fullNameController.text.trim(),
+        'phone': _phoneController.text.trim(),
+        'is_corporate': widget.isCorporate,
+      };
+
+      if (widget.isCorporate) {
+        userMetadata['company_name'] = _companyNameController.text.trim();
+        userMetadata['tax_number'] = _taxNumberController.text.trim();
+      }
+
+      final response = await Supabase.instance.client.auth.signUp(
+        email: email,
+        password: password,
+        data: userMetadata,
+      );
+
+      if (mounted && response.user != null && response.session != null) {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (_) => const MainScreen()),
+          (route) => false,
+        );
+      } else if (mounted && response.user != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'تم إنشاء الحساب. تحقق من بريدك الإلكتروني ثم سجّل الدخول.',
+            ),
+          ),
+        );
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => LoginScreen(isCorporate: widget.isCorporate),
+          ),
+        );
+      }
+    } on AuthException catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(error.message), backgroundColor: Colors.red),
+        );
+      }
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('حدث خطأ غير متوقع: $error'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
   }
 
   @override
@@ -52,7 +126,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 // العنوان والوصف
                 Text(
                   widget.isCorporate
-                      ? AppStrings.tr(context, AppStrings.signUpCorporateHeaderTitle)
+                      ? AppStrings.tr(
+                          context,
+                          AppStrings.signUpCorporateHeaderTitle,
+                        )
                       : AppStrings.tr(context, AppStrings.signUpHeaderTitle),
                   style: const TextStyle(
                     fontSize: 26,
@@ -64,8 +141,14 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 const SizedBox(height: 8),
                 Text(
                   widget.isCorporate
-                      ? AppStrings.tr(context, AppStrings.signUpSubtitleCorporate)
-                      : AppStrings.tr(context, AppStrings.signUpSubtitleIndividual),
+                      ? AppStrings.tr(
+                          context,
+                          AppStrings.signUpSubtitleCorporate,
+                        )
+                      : AppStrings.tr(
+                          context,
+                          AppStrings.signUpSubtitleIndividual,
+                        ),
                   style: TextStyle(
                     fontSize: 14,
                     color: Colors.grey[600],
@@ -79,7 +162,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   controller: _fullNameController,
                   decoration: InputDecoration(
                     labelText: AppStrings.tr(context, AppStrings.fullName),
-                    prefixIcon: const Icon(Icons.person_outline, color: AppColors.primaryCyan),
+                    prefixIcon: const Icon(
+                      Icons.person_outline,
+                      color: AppColors.primaryCyan,
+                    ),
                     filled: true,
                     fillColor: AppColors.cardWhite,
                     border: OutlineInputBorder(
@@ -87,7 +173,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       borderSide: BorderSide.none,
                     ),
                   ),
-                  validator: (val) => (val == null || val.isEmpty)
+                  validator: (val) => (val == null || val.trim().isEmpty)
                       ? AppStrings.tr(context, AppStrings.fullNameError)
                       : null,
                 ),
@@ -99,7 +185,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     controller: _companyNameController,
                     decoration: InputDecoration(
                       labelText: AppStrings.tr(context, AppStrings.companyName),
-                      prefixIcon: const Icon(Icons.business_outlined, color: AppColors.primaryGreen),
+                      prefixIcon: const Icon(
+                        Icons.business_outlined,
+                        color: AppColors.primaryGreen,
+                      ),
                       filled: true,
                       fillColor: AppColors.cardWhite,
                       border: OutlineInputBorder(
@@ -107,7 +196,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         borderSide: BorderSide.none,
                       ),
                     ),
-                    validator: (val) => (val == null || val.isEmpty)
+                    validator: (val) => (val == null || val.trim().isEmpty)
                         ? AppStrings.tr(context, AppStrings.companyNameError)
                         : null,
                   ),
@@ -117,7 +206,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     keyboardType: TextInputType.number,
                     decoration: InputDecoration(
                       labelText: AppStrings.tr(context, AppStrings.taxNumber),
-                      prefixIcon: const Icon(Icons.receipt_long_outlined, color: AppColors.primaryGreen),
+                      prefixIcon: const Icon(
+                        Icons.receipt_long_outlined,
+                        color: AppColors.primaryGreen,
+                      ),
                       filled: true,
                       fillColor: AppColors.cardWhite,
                       border: OutlineInputBorder(
@@ -135,7 +227,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   keyboardType: TextInputType.emailAddress,
                   decoration: InputDecoration(
                     labelText: AppStrings.tr(context, AppStrings.email),
-                    prefixIcon: const Icon(Icons.email_outlined, color: AppColors.primaryCyan),
+                    prefixIcon: const Icon(
+                      Icons.email_outlined,
+                      color: AppColors.primaryCyan,
+                    ),
                     filled: true,
                     fillColor: AppColors.cardWhite,
                     border: OutlineInputBorder(
@@ -156,7 +251,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   decoration: InputDecoration(
                     labelText: AppStrings.tr(context, AppStrings.phone),
                     hintText: '5xxxxxxxx',
-                    prefixIcon: const Icon(Icons.phone_android_outlined, color: AppColors.primaryCyan),
+                    prefixIcon: const Icon(
+                      Icons.phone_android_outlined,
+                      color: AppColors.primaryCyan,
+                    ),
                     filled: true,
                     fillColor: AppColors.cardWhite,
                     border: OutlineInputBorder(
@@ -164,7 +262,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       borderSide: BorderSide.none,
                     ),
                   ),
-                  validator: (val) => (val == null || val.length < 8)
+                  validator: (val) => (val == null || val.trim().length < 8)
                       ? AppStrings.tr(context, AppStrings.phoneError)
                       : null,
                 ),
@@ -176,10 +274,15 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   obscureText: !_isPasswordVisible,
                   decoration: InputDecoration(
                     labelText: AppStrings.tr(context, AppStrings.password),
-                    prefixIcon: const Icon(Icons.lock_outline, color: AppColors.primaryCyan),
+                    prefixIcon: const Icon(
+                      Icons.lock_outline,
+                      color: AppColors.primaryCyan,
+                    ),
                     suffixIcon: IconButton(
                       icon: Icon(
-                        _isPasswordVisible ? Icons.visibility_off : Icons.visibility,
+                        _isPasswordVisible
+                            ? Icons.visibility_off
+                            : Icons.visibility,
                         color: Colors.grey,
                       ),
                       onPressed: () {
@@ -206,27 +309,27 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   width: double.infinity,
                   height: 52,
                   child: ElevatedButton(
-                    onPressed: () {
-                      if (_formKey.currentState!.validate()) {
-                        // TODO: Register Logic
-                      }
-                    },
+                    onPressed: _isLoading ? null : _handleSignUp,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: widget.isCorporate ? AppColors.primaryGreen : AppColors.primaryCyan,
+                      backgroundColor: widget.isCorporate
+                          ? AppColors.primaryGreen
+                          : AppColors.primaryCyan,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
                       elevation: 0,
                     ),
-                    child: Text(
-                      AppStrings.tr(context, AppStrings.createAccountBtn),
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                        fontFamily: 'Tajawal',
-                      ),
-                    ),
+                    child: _isLoading
+                        ? const CircularProgressIndicator(color: Colors.white)
+                        : Text(
+                            AppStrings.tr(context, AppStrings.createAccountBtn),
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                              fontFamily: 'Tajawal',
+                            ),
+                          ),
                   ),
                 ),
                 const SizedBox(height: 24),
@@ -237,14 +340,18 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   children: [
                     Text(
                       AppStrings.tr(context, AppStrings.alreadyHaveAccount),
-                      style: TextStyle(color: Colors.grey[600], fontFamily: 'Tajawal'),
+                      style: TextStyle(
+                        color: Colors.grey[600],
+                        fontFamily: 'Tajawal',
+                      ),
                     ),
                     TextButton(
                       onPressed: () {
                         Navigator.pushReplacement(
                           context,
                           MaterialPageRoute(
-                            builder: (_) => LoginScreen(isCorporate: widget.isCorporate),
+                            builder: (_) =>
+                                LoginScreen(isCorporate: widget.isCorporate),
                           ),
                         );
                       },

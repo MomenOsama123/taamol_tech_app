@@ -5,24 +5,35 @@
 // gestures. You can also use WidgetTester to find child widgets in the widget
 // tree, read text, and verify that the values of widget properties are correct.
 
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:taamol_tech/features/auth/presentation/screens/onboarding_screen.dart';
+import 'package:taamol_tech/features/auth/presentation/screens/sign_up_screen.dart';
 import 'package:taamol_tech/main.dart';
 
 void main() {
-  testWidgets('Onboarding advances to the next slide', (
+  testWidgets('New users see onboarding before signup', (
     WidgetTester tester,
   ) async {
+    SharedPreferences.setMockInitialValues({});
+    await Supabase.initialize(
+      url: 'https://ekhegdzeowsuceorxtin.supabase.co',
+      publishableKey: 'sb_publishable_3nUZ1BHOY-t1DhWwx254kw_XYcvWeKN',
+    );
+    addTearDown(() => Supabase.instance.client.auth.dispose());
+
     await tester.pumpWidget(const TkamolTechApp());
     await tester.pumpAndSettle();
 
-    expect(find.byType(PageView), findsOneWidget);
-    expect(find.text('التالي'), findsOneWidget);
+    expect(find.byType(OnboardingScreen), findsOneWidget);
+    expect(find.text('تخطي'), findsOneWidget);
 
-    await tester.tap(find.text('التالي'));
+    await tester.tap(find.text('تخطي'));
     await tester.pumpAndSettle();
 
-    expect(find.text('الطابعات والأحبار ومستلزمات المكاتب'), findsOneWidget);
+    expect(find.byType(SignUpScreen), findsOneWidget);
+    Supabase.instance.client.auth.stopAutoRefresh();
   });
 }
