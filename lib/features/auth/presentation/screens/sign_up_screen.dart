@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_strings.dart';
+import '../../data/auth_service.dart';
 import '../../../home/presentation/pages/main_screen.dart';
-import 'email_confirmation_screen.dart';
 import 'login_screen.dart';
 
 class SignUpScreen extends StatefulWidget {
@@ -58,7 +58,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
         userMetadata['tax_number'] = _taxNumberController.text.trim();
       }
 
-      final response = await Supabase.instance.client.auth.signUp(
+      final response = await signUp(
         email: email,
         password: password,
         data: userMetadata,
@@ -71,10 +71,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
           (route) => false,
         );
       } else if (mounted && response.user != null) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (_) => EmailConfirmationScreen(email: email),
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Account created, but Supabase still requires email confirmation. Disable Confirm email in Supabase Authentication settings.',
+            ),
           ),
         );
       }

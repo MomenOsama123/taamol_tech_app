@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:taamol_tech/main.dart';
+import 'package:taamol_tech/features/products/data/product_service.dart';
 
 class SupabaseTestScreen extends StatelessWidget {
   const SupabaseTestScreen({super.key});
@@ -9,7 +9,7 @@ class SupabaseTestScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('اختبار بيانات Supabase')),
       body: FutureBuilder<List<Map<String, dynamic>>>(
-        future: supabase.from('products').select(),
+        future: fetchProducts(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());

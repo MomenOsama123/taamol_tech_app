@@ -11,7 +11,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:taamol_tech/features/auth/presentation/screens/onboarding_screen.dart';
 import 'package:taamol_tech/features/auth/presentation/screens/sign_up_screen.dart';
-import 'package:taamol_tech/main.dart';
+import 'package:taamol_tech/features/auth/presentation/widgets/language_selector_widget.dart';
 
 void main() {
   testWidgets('New users see onboarding before signup', (

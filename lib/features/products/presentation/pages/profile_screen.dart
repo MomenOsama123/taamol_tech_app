@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../auth/data/auth_service.dart';
 import '../../../auth/presentation/controllers/language_controller.dart';
 import '../../../auth/presentation/screens/login_screen.dart';
 
@@ -13,13 +14,33 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   // جلب المستخدم الحالي من Supabase
-  User? currentUser = Supabase.instance.client.auth.currentUser;
+  final User? currentUser = Supabase.instance.client.auth.currentUser;
 
-  // بيانات افتراضية للمستخدم المسجل
-  String userName = "أحمد المحمدي";
-  String userId = "TK-89420";
-  String userRole = "Admin";
-  String userEmail = "ahmed@tkamol.com";
+  late String userName;
+  late String userId;
+  late String userRole;
+  late String userEmail;
+
+  @override
+  void initState() {
+    super.initState();
+    final user = currentUser;
+    final metadata = user?.userMetadata ?? <String, dynamic>{};
+    userName = metadata['full_name']?.toString().trim().isNotEmpty == true
+        ? metadata['full_name'].toString()
+        : user?.email?.split('@').first ?? 'User';
+    userId = user?.id ?? '';
+    userEmail = user?.email ?? '';
+    userRole = '';
+    _loadUserRole();
+  }
+
+  Future<void> _loadUserRole() async {
+    if (currentUser == null) return;
+    final isAdmin = await isCurrentUserAdmin();
+    if (!mounted) return;
+    setState(() => userRole = isAdmin ? 'Admin' : 'User');
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -89,35 +110,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       setState(() {});
                     },
                   ),
-
-                  // تبديل الأدوار (يظهر للمسجلين فقط للتجربة)
-                  if (!isGuest) ...[
-                    const Divider(height: 1),
-                    ListTile(
-                      leading: const Icon(
-                        Icons.admin_panel_settings_outlined,
-                        color: AppColors.deepPurple,
-                      ),
-                      title: Text(
-                        isArabic
-                            ? 'تبديل الصلاحية (للتجربة)'
-                            : 'Switch Role (Testing)',
-                        style: const TextStyle(
-                          fontFamily: 'Tajawal',
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
-                        ),
-                      ),
-                      subtitle: Text(
-                        isArabic ? 'الحالية: $userRole' : 'Current: $userRole',
-                        style: const TextStyle(
-                          fontSize: 11,
-                          color: Colors.grey,
-                        ),
-                      ),
-                      onTap: _showRoleSwitchDialog,
-                    ),
-                  ],
                 ],
               ),
             ),
@@ -299,7 +291,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             children: [
               CircleAvatar(
                 radius: 45,
-                backgroundColor: AppColors.primaryCyan.withValues(alpha:0.15),
+                backgroundColor: AppColors.primaryCyan.withValues(alpha: 0.15),
                 child: const Icon(
                   Icons.person,
                   size: 50,
@@ -313,7 +305,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
-                  userRole,
+                  userRole.isEmpty ? 'No role assigned' : userRole,
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 10,
@@ -396,44 +388,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
           fontWeight: FontWeight.bold,
           color: Colors.grey.shade700,
           fontFamily: 'Tajawal',
-        ),
-      ),
-    );
-  }
-
-  void _showRoleSwitchDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text(
-          'اختر الصلاحية لتجربتها',
-          style: TextStyle(fontFamily: 'Tajawal'),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              title: const Text('Admin (آدمن)'),
-              onTap: () {
-                setState(() => userRole = 'Admin');
-                Navigator.pop(context);
-              },
-            ),
-            ListTile(
-              title: const Text('B2B Corporate (شركة)'),
-              onTap: () {
-                setState(() => userRole = 'B2B Corporate');
-                Navigator.pop(context);
-              },
-            ),
-            ListTile(
-              title: const Text('User (عميل أفراد)'),
-              onTap: () {
-                setState(() => userRole = 'User');
-                Navigator.pop(context);
-              },
-            ),
-          ],
         ),
       ),
     );

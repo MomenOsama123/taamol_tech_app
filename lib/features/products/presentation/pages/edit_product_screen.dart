@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:taamol_tech/core/constants/app_colors.dart';
 import 'package:taamol_tech/core/widgets/custom_button.dart';
 import 'package:taamol_tech/core/widgets/custom_text_field.dart';
+import 'package:taamol_tech/features/auth/data/auth_service.dart';
 import 'package:taamol_tech/features/products/data/models/product_model.dart';
 
 class EditProductScreen extends StatefulWidget {
@@ -62,6 +63,14 @@ class _EditProductScreenState extends State<EditProductScreen> {
   Future<void> _saveProduct() async {
     if (_isSaving || !_formKey.currentState!.validate()) return;
 
+    if (!await isCurrentUserAdmin()) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Only admins can manage products.')),
+      );
+      return;
+    }
+
     final price = double.tryParse(_priceController.text.trim());
     if (price == null || price < 0) return;
 
@@ -72,8 +81,8 @@ class _EditProductScreenState extends State<EditProductScreen> {
 
       final productData = {
         'name_ar': _nameArController.text.trim(),
-        'name_en': _nameEnController.text.trim().isEmpty 
-            ? _nameArController.text.trim() 
+        'name_en': _nameEnController.text.trim().isEmpty
+            ? _nameArController.text.trim()
             : _nameEnController.text.trim(),
         'description_ar': _descArController.text.trim(),
         'description_en': _descArController.text.trim(),
@@ -81,7 +90,8 @@ class _EditProductScreenState extends State<EditProductScreen> {
         'category': _selectedCategory,
         'is_available': _isAvailable,
         'is_b2b_available': _isB2BAvailable,
-        'image_url': widget.product?.imageUrl ?? 'https://via.placeholder.com/200',
+        'image_url':
+            widget.product?.imageUrl ?? 'https://via.placeholder.com/200',
       };
 
       if (widget.product != null) {
@@ -101,10 +111,7 @@ class _EditProductScreenState extends State<EditProductScreen> {
     } on PostgrestException catch (error) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(error.message),
-            backgroundColor: Colors.red,
-          ),
+          SnackBar(content: Text(error.message), backgroundColor: Colors.red),
         );
       }
     } catch (error) {
@@ -228,11 +235,11 @@ class _EditProductScreenState extends State<EditProductScreen> {
                   subtitle: Text(
                     _isAvailable
                         ? (isArabic
-                            ? 'المنتج متاح حالياً للمستخدمين'
-                            : 'Currently Available')
+                              ? 'المنتج متاح حالياً للمستخدمين'
+                              : 'Currently Available')
                         : (isArabic
-                            ? 'المنتج غير متاح (نفذت الكمية)'
-                            : 'Out of Stock'),
+                              ? 'المنتج غير متاح (نفذت الكمية)'
+                              : 'Out of Stock'),
                     style: TextStyle(
                       color: _isAvailable ? Colors.green : Colors.red,
                       fontSize: 12,

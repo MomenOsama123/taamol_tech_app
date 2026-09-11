@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:taamol_tech/core/constants/app_colors.dart';
 import 'package:taamol_tech/core/constants/app_strings.dart';
+import 'package:taamol_tech/features/auth/data/auth_service.dart';
 import 'package:taamol_tech/features/products/data/models/product_model.dart';
+import 'package:taamol_tech/features/products/presentation/pages/edit_product_screen.dart';
 import 'package:taamol_tech/main.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -13,11 +16,20 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   late Future<List<ProductModel>> _productsFuture;
+  final _supabase = supabase;
+  bool _isAdmin = false;
 
   @override
   void initState() {
     super.initState();
     _productsFuture = _loadProducts();
+    _loadAdminStatus();
+  }
+
+  Future<void> _loadAdminStatus() async {
+    final isAdmin = await isCurrentUserAdmin();
+    if (!mounted) return;
+    setState(() => _isAdmin = isAdmin);
   }
 
   Future<List<ProductModel>> _loadProducts() async {
@@ -47,6 +59,51 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  Future<void> _openEditor([ProductModel? product]) async {
+    if (!_isAdmin) return;
+    final changed = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(builder: (_) => EditProductScreen(product: product)),
+    );
+    if (changed == true && mounted) {
+      setState(() => _productsFuture = _loadProducts());
+    }
+  }
+
+  Future<void> _deleteProduct(ProductModel product) async {
+    if (!_isAdmin) return;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Delete product'),
+        content: Text(
+          'Delete ${product.nameEn.isEmpty ? product.nameAr : product.nameEn}?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    try {
+      await _supabase.from('products').delete().eq('id', product.id);
+      if (mounted) setState(() => _productsFuture = _loadProducts());
+    } on PostgrestException catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error.message), backgroundColor: Colors.red),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final bool isArabic = Localizations.localeOf(context).languageCode == 'ar';
@@ -64,6 +121,15 @@ class _HomeScreenState extends State<HomeScreen> {
             fontFamily: 'Tajawal',
           ),
         ),
+        actions: _isAdmin
+            ? [
+                IconButton(
+                  tooltip: 'Add product',
+                  onPressed: _openEditor,
+                  icon: const Icon(Icons.add),
+                ),
+              ]
+            : null,
       ),
       body: FutureBuilder<List<ProductModel>>(
         future: _productsFuture,
@@ -128,7 +194,13 @@ class _HomeScreenState extends State<HomeScreen> {
               itemBuilder: (context, index) {
                 final product = products[index];
 
-                return _ProductTile(product: product, isArabic: isArabic);
+                return _ProductTile(
+                  product: product,
+                  isArabic: isArabic,
+                  isAdmin: _isAdmin,
+                  onEdit: () => _openEditor(product),
+                  onDelete: () => _deleteProduct(product),
+                );
               },
             ),
           );
@@ -141,8 +213,17 @@ class _HomeScreenState extends State<HomeScreen> {
 class _ProductTile extends StatelessWidget {
   final ProductModel product;
   final bool isArabic;
+  final bool isAdmin;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
 
-  const _ProductTile({required this.product, required this.isArabic});
+  const _ProductTile({
+    required this.product,
+    required this.isArabic,
+    required this.isAdmin,
+    required this.onEdit,
+    required this.onDelete,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -212,6 +293,17 @@ class _ProductTile extends StatelessWidget {
               ],
             ),
           ),
+          if (isAdmin)
+            PopupMenuButton<String>(
+              onSelected: (value) {
+                if (value == 'edit') onEdit();
+                if (value == 'delete') onDelete();
+              },
+              itemBuilder: (_) => const [
+                PopupMenuItem(value: 'edit', child: Text('Edit')),
+                PopupMenuItem(value: 'delete', child: Text('Delete')),
+              ],
+            ),
         ],
       ),
     );

@@ -4,13 +4,12 @@ import 'package:taamol_tech/core/constants/app_colors.dart' show AppColors;
 import 'package:taamol_tech/features/auth/presentation/controllers/language_controller.dart';
 import 'package:taamol_tech/features/auth/presentation/screens/onboarding_screen.dart';
 
-
 void main() {
-  runApp(const MyApp());
+  runApp(const TkamolTechApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class TkamolTechApp extends StatelessWidget {
+  const TkamolTechApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -21,18 +20,15 @@ class MyApp extends StatelessWidget {
           title: 'Tkamol Tech',
           debugShowCheckedModeBanner: false,
           locale: currentLocale,
-          
+
           // إعدادات اللغات والاتجاهات (RTL / LTR)
-          supportedLocales: const [
-            Locale('ar', ''),
-            Locale('en', ''),
-          ],
+          supportedLocales: const [Locale('ar', ''), Locale('en', '')],
           localizationsDelegates: [
             GlobalMaterialLocalizations.delegate,
             GlobalWidgetsLocalizations.delegate,
             GlobalCupertinoLocalizations.delegate,
           ],
-          
+
           theme: ThemeData(
             primaryColor: AppColors.primaryCyan,
             scaffoldBackgroundColor: AppColors.background,
