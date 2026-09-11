@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:taamol_tech/core/constants/app_colors.dart';
-import 'package:taamol_tech/features/auth/presentation/controllers/language_controller.dart';
-import 'package:taamol_tech/features/auth/presentation/screens/login_screen.dart';
+import '../../../../core/constants/app_colors.dart';
+import '../../../auth/presentation/controllers/language_controller.dart';
+import '../../../auth/presentation/screens/login_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -12,92 +12,28 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  String _userName = '';
-  String _userId = '';
-  String _userRole = 'User';
-  String _userEmail = '';
-  bool _isLoading = true;
-  bool _isSigningOut = false;
+  // جلب المستخدم الحالي من Supabase
+  User? currentUser = Supabase.instance.client.auth.currentUser;
 
-  @override
-  void initState() {
-    super.initState();
-    _fetchUserData();
-  }
-
-  // جلب بيانات المستخدم الحالي من Supabase
-  Future<void> _fetchUserData() async {
-    final supabase = Supabase.instance.client;
-    final user = supabase.auth.currentUser;
-
-    if (user != null) {
-      _userEmail = user.email ?? '';
-      _userId = user.id.substring(0, user.id.length.clamp(0, 8)).toUpperCase();
-
-      try {
-        // جلب تفاصيل الملف الشخصي من جدول profiles (أو users حسب المسمى لديك)
-        final data = await supabase
-            .from('profiles')
-            .select('name, role')
-            .eq('id', user.id)
-            .maybeSingle();
-
-        if (data != null) {
-          if (!mounted) return;
-          setState(() {
-            _userName =
-                data['name'] ?? user.userMetadata?['full_name'] ?? 'مستخدم';
-            _userRole = data['role'] ?? 'User';
-            _isLoading = false;
-          });
-          return;
-        }
-      } catch (e) {
-        // في حال عدم وجود الجدول أو حدوث خطأ، الاستعانة بالـ User Metadata
-      }
-
-      if (!mounted) return;
-      setState(() {
-        _userName = user.userMetadata?['full_name'] ?? 'مستخدم';
-        _userRole = user.userMetadata?['role'] ?? 'User';
-        _isLoading = false;
-      });
-    } else {
-      if (mounted) setState(() => _isLoading = false);
-    }
-  }
-
-  // تنفيذ تسجيل الخروج من Supabase
-  Future<void> _signOut() async {
-    if (_isSigningOut) return;
-    setState(() => _isSigningOut = true);
-
-    try {
-      await Supabase.instance.client.auth.signOut();
-      if (mounted) {
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (_) => const LoginScreen()),
-          (route) => false,
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _isSigningOut = false);
-    }
-  }
+  // بيانات افتراضية للمستخدم المسجل
+  String userName = "أحمد المحمدي";
+  String userId = "TK-89420";
+  String userRole = "Admin";
+  String userEmail = "ahmed@tkamol.com";
 
   @override
   Widget build(BuildContext context) {
     final bool isArabic = Localizations.localeOf(context).languageCode == 'ar';
+    final bool isGuest =
+        currentUser == null; // تحديد ما إذا كان المستخدم زائراً
 
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: AppColors.background,
+        backgroundColor: AppColors.cardWhite,
         elevation: 0,
-        scrolledUnderElevation: 0,
         title: Text(
-          isArabic ? 'الملف الشخصي' : 'Profile',
+          isArabic ? 'الملف الشخصي' : 'User Profile',
           style: const TextStyle(
             color: AppColors.deepPurple,
             fontFamily: 'Tajawal',
@@ -106,352 +42,348 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
         centerTitle: true,
       ),
-      body: SafeArea(
-        child: _isLoading
-            ? const Center(
-                child: CircularProgressIndicator(color: AppColors.deepPurple),
-              )
-            : SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [AppColors.deepPurple, AppColors.primaryCyan],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        borderRadius: BorderRadius.circular(24),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColors.deepPurple.withAlpha(26),
-                            blurRadius: 20,
-                            offset: const Offset(0, 10),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        children: [
-                          Stack(
-                            alignment: Alignment.bottomRight,
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(4),
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                    color: Colors.white.withAlpha(120),
-                                    width: 2,
-                                  ),
-                                ),
-                                child: CircleAvatar(
-                                  radius: 46,
-                                  backgroundColor: Colors.white.withAlpha(30),
-                                  child: const Icon(
-                                    Icons.person,
-                                    size: 52,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                              ),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 10,
-                                  vertical: 5,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: _getRoleColor(_userRole),
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(
-                                    color: Colors.white.withAlpha(80),
-                                  ),
-                                ),
-                                child: Text(
-                                  _userRole,
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.bold,
-                                    fontFamily: 'Tajawal',
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 18),
-                          Text(
-                            _userName,
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(
-                              fontSize: 22,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                              fontFamily: 'Tajawal',
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            _userEmail,
-                            style: const TextStyle(
-                              fontSize: 13,
-                              color: Colors.white70,
-                              fontFamily: 'Tajawal',
-                            ),
-                          ),
-                          const SizedBox(height: 18),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 8,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withAlpha(18),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Icon(
-                                  Icons.badge_outlined,
-                                  size: 16,
-                                  color: Colors.white,
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  'ID: $_userId',
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
-                                    letterSpacing: 1,
-                                    fontFamily: 'Tajawal',
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(20.0),
+        child: Column(
+          children: [
+            // 1. عرض بطاقة الزائر أو بطاقة المستخدم المسجل
+            isGuest ? _buildGuestHeader(isArabic) : _buildUserHeader(),
+            const SizedBox(height: 24),
+
+            // 2. قائمة الإعدادات والتفضيلات (متاحة للجميع)
+            _buildSectionTitle(
+              isArabic ? 'الإعدادات والتفضيلات' : 'Settings & Preferences',
+            ),
+            const SizedBox(height: 12),
+
+            Container(
+              decoration: BoxDecoration(
+                color: AppColors.cardWhite,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Column(
+                children: [
+                  // تغيير اللغة
+                  ListTile(
+                    leading: const Icon(
+                      Icons.language,
+                      color: AppColors.primaryCyan,
+                    ),
+                    title: Text(
+                      isArabic ? 'اللغة / Language' : 'Language / اللغة',
+                      style: const TextStyle(
+                        fontFamily: 'Tajawal',
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
                       ),
                     ),
-                    const SizedBox(height: 24),
-
-                    _buildSectionTitle(
-                      isArabic
-                          ? 'الإعدادات والتفضيلات'
-                          : 'Settings & Preferences',
-                    ),
-                    const SizedBox(height: 12),
-
-                    Container(
-                      decoration: BoxDecoration(
-                        color: AppColors.cardWhite,
-                        borderRadius: BorderRadius.circular(18),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withAlpha(8),
-                            blurRadius: 12,
-                            offset: const Offset(0, 3),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        children: [
-                          ListTile(
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 18,
-                              vertical: 6,
-                            ),
-                            leading: Container(
-                              width: 40,
-                              height: 40,
-                              decoration: BoxDecoration(
-                                color: AppColors.primaryCyan.withAlpha(22),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: const Icon(
-                                Icons.language,
-                                color: AppColors.primaryCyan,
-                              ),
-                            ),
-                            title: Text(
-                              isArabic
-                                  ? 'اللغة / Language'
-                                  : 'Language / اللغة',
-                              style: const TextStyle(
-                                fontFamily: 'Tajawal',
-                                fontWeight: FontWeight.bold,
-                                fontSize: 14,
-                                color: AppColors.deepPurple,
-                              ),
-                            ),
-                            trailing: Text(
-                              isArabic ? 'العربية' : 'English',
-                              style: const TextStyle(
-                                color: AppColors.deepPurple,
-                                fontWeight: FontWeight.bold,
-                                fontFamily: 'Tajawal',
-                              ),
-                            ),
-                            onTap: () {
-                              LanguageController.toggleLanguage();
-                              setState(() {});
-                            },
-                          ),
-                          const Divider(height: 1, indent: 18, endIndent: 18),
-                          ListTile(
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 18,
-                              vertical: 6,
-                            ),
-                            leading: Container(
-                              width: 40,
-                              height: 40,
-                              decoration: BoxDecoration(
-                                color: AppColors.deepPurple.withAlpha(20),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: const Icon(
-                                Icons.verified_user_outlined,
-                                color: AppColors.deepPurple,
-                              ),
-                            ),
-                            title: Text(
-                              isArabic ? 'نوع الحساب' : 'Account Type',
-                              style: const TextStyle(
-                                fontFamily: 'Tajawal',
-                                fontWeight: FontWeight.bold,
-                                fontSize: 14,
-                                color: AppColors.deepPurple,
-                              ),
-                            ),
-                            subtitle: Text(
-                              isArabic
-                                  ? 'الحساب الحالي: $_userRole'
-                                  : 'Current account: $_userRole',
-                              style: const TextStyle(
-                                fontSize: 11,
-                                color: AppColors.textSecondary,
-                              ),
-                            ),
-                            trailing: const Icon(
-                              Icons.lock_outline,
-                              size: 18,
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
-                        ],
+                    trailing: Text(
+                      isArabic ? 'العربية' : 'English',
+                      style: const TextStyle(
+                        color: AppColors.deepPurple,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
-                    const SizedBox(height: 24),
+                    onTap: () {
+                      LanguageController.toggleLanguage();
+                      setState(() {});
+                    },
+                  ),
 
-                    _buildSectionTitle(
-                      isArabic ? 'الدعم والمساعدة' : 'Support & Help',
-                    ),
-                    const SizedBox(height: 12),
-
-                    Container(
-                      decoration: BoxDecoration(
-                        color: AppColors.cardWhite,
-                        borderRadius: BorderRadius.circular(18),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withAlpha(8),
-                            blurRadius: 12,
-                            offset: const Offset(0, 3),
-                          ),
-                        ],
+                  // تبديل الأدوار (يظهر للمسجلين فقط للتجربة)
+                  if (!isGuest) ...[
+                    const Divider(height: 1),
+                    ListTile(
+                      leading: const Icon(
+                        Icons.admin_panel_settings_outlined,
+                        color: AppColors.deepPurple,
                       ),
-                      child: ListTile(
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 18,
-                          vertical: 6,
-                        ),
-                        leading: Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            color: AppColors.primaryGreen.withAlpha(20),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: const Icon(
-                            Icons.support_agent,
-                            color: AppColors.primaryGreen,
-                          ),
-                        ),
-                        title: Text(
-                          isArabic
-                              ? 'التواصل مع الدعم الفني'
-                              : 'Contact Support',
-                          style: const TextStyle(
-                            fontFamily: 'Tajawal',
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
-                            color: AppColors.deepPurple,
-                          ),
-                        ),
-                        trailing: const Icon(
-                          Icons.arrow_forward_ios,
-                          size: 14,
-                          color: AppColors.textSecondary,
-                        ),
-                        onTap: () {},
-                      ),
-                    ),
-                    const SizedBox(height: 28),
-
-                    SizedBox(
-                      width: double.infinity,
-                      height: 54,
-                      child: OutlinedButton.icon(
-                        onPressed: _isSigningOut ? null : _signOut,
-                        icon: const Icon(
-                          Icons.logout_rounded,
-                          color: Color(0xFFE11D48),
-                        ),
-                        label: _isSigningOut
-                            ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                ),
-                              )
-                            : Text(
-                                isArabic ? 'تسجيل الخروج' : 'Log Out',
-                                style: const TextStyle(
-                                  color: Color(0xFFE11D48),
-                                  fontFamily: 'Tajawal',
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                        style: OutlinedButton.styleFrom(
-                          side: const BorderSide(
-                            color: Color(0xFFE11D48),
-                            width: 1.2,
-                          ),
-                          backgroundColor: const Color(0xFFFFF1F5),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
-                          ),
+                      title: Text(
+                        isArabic
+                            ? 'تبديل الصلاحية (للتجربة)'
+                            : 'Switch Role (Testing)',
+                        style: const TextStyle(
+                          fontFamily: 'Tajawal',
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
                         ),
                       ),
+                      subtitle: Text(
+                        isArabic ? 'الحالية: $userRole' : 'Current: $userRole',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: Colors.grey,
+                        ),
+                      ),
+                      onTap: _showRoleSwitchDialog,
                     ),
                   ],
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+
+            // 3. الدعم والمساعدة
+            _buildSectionTitle(isArabic ? 'الدعم والمساعدة' : 'Support & Help'),
+            const SizedBox(height: 12),
+
+            Container(
+              decoration: BoxDecoration(
+                color: AppColors.cardWhite,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: ListTile(
+                leading: const Icon(
+                  Icons.support_agent,
+                  color: AppColors.primaryGreen,
+                ),
+                title: Text(
+                  isArabic ? 'التواصل مع الدعم الفني' : 'Contact Support',
+                  style: const TextStyle(
+                    fontFamily: 'Tajawal',
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                ),
+                trailing: const Icon(
+                  Icons.arrow_forward_ios,
+                  size: 14,
+                  color: Colors.grey,
+                ),
+                onTap: () {},
+              ),
+            ),
+            const SizedBox(height: 32),
+
+            // 4. زر تسجيل الخروج للمستخدم المسجل
+            if (!isGuest)
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: OutlinedButton.icon(
+                  onPressed: () async {
+                    await Supabase.instance.client.auth.signOut();
+                    if (!context.mounted) return;
+                    Navigator.pushAndRemoveUntil(
+                      context,
+                      MaterialPageRoute(builder: (_) => const LoginScreen()),
+                      (route) => false,
+                    );
+                  },
+                  icon: const Icon(Icons.logout, color: Colors.redAccent),
+                  label: Text(
+                    isArabic ? 'تسجيل الخروج' : 'Log Out',
+                    style: const TextStyle(
+                      color: Colors.redAccent,
+                      fontFamily: 'Tajawal',
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: Colors.redAccent),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
                 ),
               ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ✨ بطاقة خاصة بالحالة عندما يكون المستخدم زائراً (Guest Mode)
+  Widget _buildGuestHeader(bool isArabic) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppColors.cardWhite,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 15,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          CircleAvatar(
+            radius: 40,
+            backgroundColor: Colors.grey.shade200,
+            child: const Icon(
+              Icons.person_outline_rounded,
+              size: 45,
+              color: Colors.grey,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            isArabic ? 'مرحباً بك يا زائرنا العزيز 👋' : 'Welcome Guest 👋',
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: AppColors.deepPurple,
+              fontFamily: 'Tajawal',
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            isArabic
+                ? 'قم بتسجيل الدخول للاستفادة من حفظ السلة، متابعة عروض الأسعار، وإدارة حسابك.'
+                : 'Log in to save items, track quote requests, and manage your account.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 13,
+              color: Colors.grey.shade600,
+              fontFamily: 'Tajawal',
+            ),
+          ),
+          const SizedBox(height: 20),
+          SizedBox(
+            width: double.infinity,
+            height: 46,
+            child: ElevatedButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const LoginScreen()),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryCyan,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 0,
+              ),
+              child: Text(
+                isArabic ? 'تسجيل الدخول / حساب جديد' : 'Log In / Sign Up',
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                  fontFamily: 'Tajawal',
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // بطاقة بيانات المستخدم المسجل
+  Widget _buildUserHeader() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppColors.cardWhite,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 15,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Stack(
+            alignment: Alignment.bottomRight,
+            children: [
+              CircleAvatar(
+                radius: 45,
+                backgroundColor: AppColors.primaryCyan.withValues(alpha:0.15),
+                child: const Icon(
+                  Icons.person,
+                  size: 50,
+                  color: AppColors.deepPurple,
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: _getRoleColor(userRole),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  userRole,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Text(
+            userName,
+            style: const TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: AppColors.deepPurple,
+              fontFamily: 'Tajawal',
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            userEmail,
+            style: TextStyle(
+              fontSize: 13,
+              color: Colors.grey.shade600,
+              fontFamily: 'Tajawal',
+            ),
+          ),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: AppColors.background,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.badge_outlined,
+                  size: 16,
+                  color: Colors.grey.shade600,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  'ID: $userId',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.deepPurple,
+                    letterSpacing: 1,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
 
   Color _getRoleColor(String role) {
-    if (role.toLowerCase() == 'admin') {
-      return AppColors.deepPurple;
+    switch (role) {
+      case 'Admin':
+        return AppColors.deepPurple;
+      case 'B2B Corporate':
+        return AppColors.primaryGreen;
+      default:
+        return AppColors.primaryCyan;
     }
-    return AppColors.primaryCyan;
   }
 
   Widget _buildSectionTitle(String title) {
@@ -464,6 +396,44 @@ class _ProfileScreenState extends State<ProfileScreen> {
           fontWeight: FontWeight.bold,
           color: Colors.grey.shade700,
           fontFamily: 'Tajawal',
+        ),
+      ),
+    );
+  }
+
+  void _showRoleSwitchDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text(
+          'اختر الصلاحية لتجربتها',
+          style: TextStyle(fontFamily: 'Tajawal'),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              title: const Text('Admin (آدمن)'),
+              onTap: () {
+                setState(() => userRole = 'Admin');
+                Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              title: const Text('B2B Corporate (شركة)'),
+              onTap: () {
+                setState(() => userRole = 'B2B Corporate');
+                Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              title: const Text('User (عميل أفراد)'),
+              onTap: () {
+                setState(() => userRole = 'User');
+                Navigator.pop(context);
+              },
+            ),
+          ],
         ),
       ),
     );

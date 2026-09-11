@@ -346,8 +346,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         Navigator.pushReplacement(
                           context,
                           MaterialPageRoute(
-                            builder: (_) =>
-                                LoginScreen(isCorporate: widget.isCorporate),
+                            builder: (_) => const LoginScreen(),
                           ),
                         );
                       },

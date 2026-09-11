@@ -1,3 +1,4 @@
 {
-    "cmake.sourceDirectory": "D:/Material/Coding/Flutter/Taamol tech/taamol_tech/linux"
+  "cmake.sourceDirectory": "D:/Material/Coding/Flutter/Taamol tech/taamol_tech/linux",
+  "java.configuration.updateBuildConfiguration": "interactive"
 }
