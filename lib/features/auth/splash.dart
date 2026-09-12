@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/constants/app_colors.dart'; //
 import '../../../../core/constants/app_strings.dart'; //
+import '../home/presentation/pages/main_screen.dart';
+import 'presentation/screens/login_screen.dart';
 import 'presentation/screens/onboarding_screen.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -17,11 +21,37 @@ class _SplashScreenState extends State<SplashScreen> {
     _navigateToNext();
   }
 
-  void _navigateToNext() async {
-    await Future.delayed(const Duration(seconds: 3));
+  Future<void> _navigateToNext() async {
+    // تأخير بسيط لعرض الشعار فقط، مش عشان ننتظر أي بيانات
+    await Future.delayed(const Duration(seconds: 2));
+    if (!mounted) return;
+
+    // 1. فيه جلسة مستخدم محفوظة (Session) بالفعل؟ يبقى يدخل على طول للتطبيق،
+    //    وهناك هيتحدد الـ role (أدمن / مستخدم عادي) من auth_service.
+    final session = Supabase.instance.client.auth.currentSession;
+    if (session != null) {
+      _goTo(const MainScreen());
+      return;
+    }
+
+    // 2. مفيش جلسة، هل سبق وشاف المستخدم شاشات الـ onboarding؟
+    final preferences = await SharedPreferences.getInstance();
+    final bool hasSeenOnboarding =
+        preferences.getBool('onboarding_completed') ?? false;
+
+    if (!mounted) return;
+
+    if (hasSeenOnboarding) {
+      _goTo(const LoginScreen());
+    } else {
+      _goTo(const OnboardingScreen());
+    }
+  }
+
+  void _goTo(Widget screen) {
     if (!mounted) return;
     Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (_) => const OnboardingScreen()),
+      MaterialPageRoute(builder: (_) => screen),
     );
   }
 
@@ -43,7 +73,7 @@ class _SplashScreenState extends State<SplashScreen> {
                 borderRadius: BorderRadius.circular(24),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha:0.2),
+                    color: Colors.black.withValues(alpha: 0.2),
                     blurRadius: 20,
                     offset: const Offset(0, 10),
                   )
@@ -59,7 +89,7 @@ class _SplashScreenState extends State<SplashScreen> {
 
             // اسم الشركة بالعربي
             const Text(
-            "تكامل تيك التجارية",
+              "تكامل تيك التجارية",
               style: TextStyle(
                 color: AppColors.cardWhite, //[cite: 1]
                 fontSize: 26,

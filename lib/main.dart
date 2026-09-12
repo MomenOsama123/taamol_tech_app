@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:taamol_tech/app.dart';
 import 'package:taamol_tech/core/constants/navigation/app_navigator.dart';
-import 'package:taamol_tech/features/auth/presentation/widgets/language_selector_widget.dart';
 import 'package:taamol_tech/features/auth/presentation/screens/update_password_screen.dart';
 
 void main() async {
@@ -15,12 +15,12 @@ void main() async {
   );
 
   Supabase.instance.client.auth.onAuthStateChange.listen((data) {
-  if (data.event == AuthChangeEvent.passwordRecovery) {
-    rootNavigatorKey.currentState?.push(
-      MaterialPageRoute(builder: (_) => const UpdatePasswordScreen()),
-    );
-  }
-});
+    if (data.event == AuthChangeEvent.passwordRecovery) {
+      rootNavigatorKey.currentState?.push(
+        MaterialPageRoute(builder: (_) => const UpdatePasswordScreen()),
+      );
+    }
+  });
 
   runApp(const TkamolTechApp());
 }
