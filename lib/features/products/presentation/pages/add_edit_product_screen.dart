@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:taamol_tech/core/constants/app_colors.dart';
+import 'package:taamol_tech/core/constants/product_categories.dart';
 import 'package:taamol_tech/features/auth/data/auth_service.dart';
 import 'package:taamol_tech/features/products/data/models/product_model.dart';
 import 'package:taamol_tech/features/products/data/product_service.dart';
@@ -21,9 +22,9 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
   late TextEditingController _descArController;
   late TextEditingController _descEnController;
   late TextEditingController _priceController;
-  late TextEditingController _categoryController;
   late TextEditingController _imageUrlController;
 
+  late String _selectedCategory;
   bool _isAvailable = true;
   bool _isLoading = false;
 
@@ -41,9 +42,15 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
     _priceController = TextEditingController(
       text: p != null ? p.price.toString() : '',
     );
-    _categoryController = TextEditingController(text: p?.category ?? '');
     _imageUrlController = TextEditingController(text: p?.imageUrl ?? '');
     _isAvailable = p?.isAvailable ?? true;
+
+    // لو القسم المحفوظ مع المنتج مش موجود في القائمة الحالية (قسم قديم مثلاً)،
+    // منختار أول قسم افتراضي بدل ما نسيب قيمة مش موجودة في الـ Dropdown.
+    final savedCategory = p?.category;
+    final isKnownCategory =
+        savedCategory != null && ProductCategories.all.any((c) => c.key == savedCategory);
+    _selectedCategory = isKnownCategory ? savedCategory : ProductCategories.all.first.key;
   }
 
   @override
@@ -53,7 +60,6 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
     _descArController.dispose();
     _descEnController.dispose();
     _priceController.dispose();
-    _categoryController.dispose();
     _imageUrlController.dispose();
     super.dispose();
   }
@@ -89,7 +95,7 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
           descriptionAr: _descArController.text.trim(),
           descriptionEn: _descEnController.text.trim(),
           price: price,
-          category: _categoryController.text.trim(),
+          category: _selectedCategory,
           imageUrl: _imageUrlController.text.trim(),
           isAvailable: _isAvailable,
         );
@@ -101,7 +107,7 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
           descriptionAr: _descArController.text.trim(),
           descriptionEn: _descEnController.text.trim(),
           price: price,
-          category: _categoryController.text.trim(),
+          category: _selectedCategory,
           imageUrl: _imageUrlController.text.trim(),
           isAvailable: _isAvailable,
         );
@@ -184,12 +190,25 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
                       },
                     ),
                     const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _categoryController,
+                    DropdownButtonFormField<String>(
+                      initialValue: _selectedCategory,
                       decoration: const InputDecoration(
                         labelText: 'الفئة (Category)',
                         border: OutlineInputBorder(),
                       ),
+                      items: ProductCategories.all
+                          .map(
+                            (c) => DropdownMenuItem(
+                              value: c.key,
+                              child: Text(c.labelAr),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: (value) {
+                        if (value != null) {
+                          setState(() => _selectedCategory = value);
+                        }
+                      },
                     ),
                     const SizedBox(height: 16),
                     TextFormField(

@@ -3,11 +3,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:taamol_tech/core/constants/app_colors.dart' show AppColors;
 import 'package:taamol_tech/core/constants/navigation/app_navigator.dart';
 import 'package:taamol_tech/features/auth/presentation/controllers/language_controller.dart';
-import 'package:taamol_tech/features/auth/presentation/screens/onboarding_screen.dart';
-
-void main() {
-  runApp(const TkamolTechApp());
-}
+import 'package:taamol_tech/features/auth/splash.dart';
 
 class TkamolTechApp extends StatelessWidget {
   const TkamolTechApp({super.key});
@@ -25,7 +21,7 @@ class TkamolTechApp extends StatelessWidget {
 
           // إعدادات اللغات والاتجاهات (RTL / LTR)
           supportedLocales: const [Locale('ar', ''), Locale('en', '')],
-          localizationsDelegates: [
+          localizationsDelegates: const [
             GlobalMaterialLocalizations.delegate,
             GlobalWidgetsLocalizations.delegate,
             GlobalCupertinoLocalizations.delegate,
@@ -35,7 +31,12 @@ class TkamolTechApp extends StatelessWidget {
             primaryColor: AppColors.primaryCyan,
             scaffoldBackgroundColor: AppColors.background,
           ),
-          home: const OnboardingScreen(),
+
+          // SplashScreen هي اللي بتقرر الوجهة الصح حسب وجود Session محفوظة:
+          // مستخدم مسجل دخول بالفعل -> MainScreen مباشرة
+          // مستخدم جديد شاف الـ onboarding قبل كده -> LoginScreen
+          // مستخدم لأول مرة -> OnboardingScreen
+          home: const SplashScreen(),
         );
       },
     );

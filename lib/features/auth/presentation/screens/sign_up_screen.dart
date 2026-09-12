@@ -5,6 +5,7 @@ import '../../../../core/constants/app_strings.dart';
 import '../../data/auth_service.dart';
 import '../../../home/presentation/pages/main_screen.dart';
 import 'login_screen.dart';
+import 'email_confirmation_screen.dart';
 
 class SignUpScreen extends StatefulWidget {
   final bool isCorporate;
@@ -71,12 +72,14 @@ class _SignUpScreenState extends State<SignUpScreen> {
           (route) => false,
         );
       } else if (mounted && response.user != null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'Account created, but Supabase still requires email confirmation. Disable Confirm email in Supabase Authentication settings.',
-            ),
+        // عدم وجود جلسة (session) يعني أن Supabase يتطلب تأكيد البريد الإلكتروني.
+        // يتم توجيه المستخدم إلى شاشة إدخال رمز التأكيد (OTP) لإكمال عملية التسجيل.
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(
+            builder: (_) => EmailConfirmationScreen(email: email),
           ),
+          (route) => false,
         );
       }
     } on AuthException catch (error) {

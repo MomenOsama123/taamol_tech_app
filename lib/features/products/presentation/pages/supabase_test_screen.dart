@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:taamol_tech/features/products/data/models/product_model.dart';
 import 'package:taamol_tech/features/products/data/product_service.dart';
 
 class SupabaseTestScreen extends StatelessWidget {
@@ -7,12 +8,16 @@ class SupabaseTestScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('اختبار بيانات Supabase')),
-      body: FutureBuilder<List<Map<String, dynamic>>>(
+      appBar: AppBar(
+        title: const Text('اختبار بيانات Supabase'),
+      ),
+      body: FutureBuilder<List<ProductModel>>(
         future: fetchProducts(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+            return const Center(
+              child: CircularProgressIndicator(),
+            );
           }
 
           if (snapshot.hasError) {
@@ -31,7 +36,9 @@ class SupabaseTestScreen extends StatelessWidget {
           final products = snapshot.data ?? [];
 
           if (products.isEmpty) {
-            return const Center(child: Text('لا توجد منتجات حتى الآن'));
+            return const Center(
+              child: Text('لا توجد منتجات حتى الآن'),
+            );
           }
 
           return ListView.separated(
@@ -39,20 +46,23 @@ class SupabaseTestScreen extends StatelessWidget {
             itemCount: products.length,
             separatorBuilder: (_, _) => const Divider(),
             itemBuilder: (context, index) {
-              final item = products[index];
-              final nameAr = item['name_ar'];
-              final nameEn = item['name_en'];
-              final price = item['price'];
+              final product = products[index];
 
               return ListTile(
                 leading: const CircleAvatar(
                   child: Icon(Icons.inventory_2_outlined),
                 ),
                 title: Text(
-                  (nameAr ?? nameEn ?? 'بدون اسم').toString(),
-                  style: const TextStyle(fontWeight: FontWeight.bold),
+                  product.nameAr.isNotEmpty
+                      ? product.nameAr
+                      : product.nameEn,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-                subtitle: Text('السعر: ${price ?? 0} ر.س'),
+                subtitle: Text(
+                  'السعر: ${product.price} ر.س',
+                ),
               );
             },
           );
@@ -61,3 +71,4 @@ class SupabaseTestScreen extends StatelessWidget {
     );
   }
 }
+

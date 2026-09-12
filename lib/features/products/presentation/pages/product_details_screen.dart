@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:taamol_tech/core/constants/app_colors.dart';
 import 'package:taamol_tech/features/products/data/models/product_model.dart';
@@ -7,27 +8,18 @@ class ProductDetailsScreen extends StatelessWidget {
   final ProductModel product;
 
   // 🟢 ضع رقم واتساب الشركة هنا بدون (00) أو (+)
-  // مثال: الرقم السعودي (966500000000) أو المصري (201000000000)
-  final String companyWhatsAppNumber = '+201020931722';
+  final String companyWhatsAppNumber = '966500000000';
 
   const ProductDetailsScreen({super.key, required this.product});
 
-  // دالة فتح تطبيق الواتساب مع نص تجهيز الطلب
-  Future<void> _openWhatsApp(
-    BuildContext context,
-    bool isArabic, {
-    bool isB2B = false,
-  }) async {
+  // دالة فتح تطبيق الواتساب مع رسالة الطلب
+  Future<void> _openWhatsApp(BuildContext context, bool isArabic) async {
     final String productName = product.getName(isArabic);
 
-    // إعداد النص التلقائي الذي سيظهر للعميل في محادثة الواتساب
-    final String message = isB2B
-        ? (isArabic
-              ? 'مرحباً تكامل تك 👋\nأرغب في الحصول على عرض سعر رسمي (B2B) للشركات للسيارة/المنتج التالي:\n- المنتج: $productName\n- رمز المنتج: #${product.id}\n- السعر الفردي: ${product.price} ر.س'
-              : 'Hello Tkamol Tech 👋\nI would like to request an official B2B quote for:\n- Product: $productName\n- ID: #${product.id}\n- Price: ${product.price} SAR')
-        : (isArabic
-              ? 'مرحباً تكامل تك 👋\nأرغب في شراء المنتج التالي:\n- المنتج: $productName\n- رمز المنتج: #${product.id}\n- السعر: ${product.price} ر.س'
-              : 'Hello Tkamol Tech 👋\nI am interested in buying:\n- Product: $productName\n- ID: #${product.id}\n- Price: ${product.price} SAR');
+    // نص الرسالة التلقائي للعميل
+    final String message = isArabic
+        ? 'مرحباً تكامل تك 👋\nأرغب في شراء المنتج التالي:\n- المنتج: $productName\n- رمز المنتج: #${product.id}\n- السعر: ${product.price} ر.س'
+        : 'Hello Tkamol Tech 👋\nI am interested in buying:\n- Product: $productName\n- ID: #${product.id}\n- Price: ${product.price} SAR';
 
     final Uri whatsappUrl = Uri.parse(
       'https://wa.me/$companyWhatsAppNumber?text=${Uri.encodeComponent(message)}',
@@ -102,42 +94,32 @@ class ProductDetailsScreen extends StatelessWidget {
                           ),
                         ],
                       ),
-                      child: Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          Icon(
-                            Icons.inventory_2_outlined,
-                            size: 110,
-                            color: Colors.grey.shade300,
-                          ),
-                          if (product.isB2BAvailable)
-                            Positioned(
-                              top: 12,
-                              right: isArabic ? 12 : null,
-                              left: isArabic ? null : 12,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 10,
-                                  vertical: 4,
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(20),
+                        child: product.imageUrl.trim().isEmpty
+                            ? Center(
+                                child: Icon(
+                                  Icons.inventory_2_outlined,
+                                  size: 110,
+                                  color: Colors.grey.shade300,
                                 ),
-                                decoration: BoxDecoration(
-                                  color: AppColors.primaryGreen,
-                                  borderRadius: BorderRadius.circular(8),
+                              )
+                            : CachedNetworkImage(
+                                imageUrl: product.imageUrl,
+                                fit: BoxFit.cover,
+                                width: double.infinity,
+                                height: 230,
+                                placeholder: (context, url) => const Center(
+                                  child: CircularProgressIndicator(),
                                 ),
-                                child: Text(
-                                  isArabic
-                                      ? 'متاح للشركات B2B'
-                                      : 'B2B Available',
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.bold,
-                                    fontFamily: 'Tajawal',
+                                errorWidget: (context, url, error) => Center(
+                                  child: Icon(
+                                    Icons.broken_image_outlined,
+                                    size: 110,
+                                    color: Colors.grey.shade300,
                                   ),
                                 ),
                               ),
-                            ),
-                        ],
                       ),
                     ),
                     const SizedBox(height: 24),
@@ -196,7 +178,7 @@ class ProductDetailsScreen extends StatelessWidget {
               ),
             ),
 
-            // الشريط السفلي: أزرار التواصل المباشر عبر الواتساب
+            // زر التواصل المباشر الوحيد عبر الواتساب
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -209,77 +191,29 @@ class ProductDetailsScreen extends StatelessWidget {
                   ),
                 ],
               ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // زر الشراء الفردي عبر الواتساب
-                  SizedBox(
-                    width: double.infinity,
-                    height: 50,
-                    child: ElevatedButton.icon(
-                      onPressed: () =>
-                          _openWhatsApp(context, isArabic, isB2B: false),
-                      icon: const Icon(Icons.chat, color: Colors.white),
-                      label: Text(
-                        isArabic
-                            ? 'طلب الشراء عبر WhatsApp'
-                            : 'Order via WhatsApp',
-                        style: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                          fontFamily: 'Tajawal',
-                        ),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(
-                          0xFF25D366,
-                        ), // لون الواتساب الرسمي
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        elevation: 0,
-                      ),
+              child: SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton.icon(
+                  onPressed: () => _openWhatsApp(context, isArabic),
+                  icon: const Icon(Icons.chat, color: Colors.white),
+                  label: Text(
+                    isArabic ? 'طلب الشراء عبر WhatsApp' : 'Order via WhatsApp',
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      fontFamily: 'Tajawal',
                     ),
                   ),
-
-                  // زر خاص بالشركات B2B لطلب عرض سعر رسمي
-                  if (product.isB2BAvailable) ...[
-                    const SizedBox(height: 10),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 46,
-                      child: OutlinedButton.icon(
-                        onPressed: () =>
-                            _openWhatsApp(context, isArabic, isB2B: true),
-                        icon: const Icon(
-                          Icons.request_quote_outlined,
-                          color: AppColors.primaryGreen,
-                        ),
-                        label: Text(
-                          isArabic
-                              ? 'طلب عرض سعر للشركات (B2B)'
-                              : 'Request Corporate Quote',
-                          style: const TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.primaryGreen,
-                            fontFamily: 'Tajawal',
-                          ),
-                        ),
-                        style: OutlinedButton.styleFrom(
-                          side: const BorderSide(
-                            color: AppColors.primaryGreen,
-                            width: 1.5,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                      ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF25D366), // لون الواتساب
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                  ],
-                ],
+                    elevation: 0,
+                  ),
+                ),
               ),
             ),
           ],
