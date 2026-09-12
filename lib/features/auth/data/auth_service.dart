@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 final _supabase = Supabase.instance.client;
 
+/// 🔹 إنشاء حساب جديد
 Future<AuthResponse> signUp({
   required String email,
   required String password,
@@ -11,10 +12,17 @@ Future<AuthResponse> signUp({
   return _supabase.auth.signUp(email: email, password: password, data: data);
 }
 
+/// 🔹 تسجيل الدخول
 Future<AuthResponse> signIn({required String email, required String password}) {
   return _supabase.auth.signInWithPassword(email: email, password: password);
 }
 
+/// 🔹 تسجيل الخروج
+Future<void> signOut() async {
+  await _supabase.auth.signOut();
+}
+
+/// 🔹 التحقق مما إذا كان المستخدم الحالي الأدمن
 Future<bool> isCurrentUserAdmin() async {
   try {
     final user = _supabase.auth.currentUser;
@@ -28,7 +36,8 @@ Future<bool> isCurrentUserAdmin() async {
 
     if (response != null) {
       final dynamic rawIsAdmin = response['is_admin'];
-      // Flexible conversion for bool, String, or int
+
+      // تحويل مرن يغطي حالات bool أو String أو int
       return rawIsAdmin == true ||
           rawIsAdmin.toString().toLowerCase() == 'true' ||
           rawIsAdmin == 1;
@@ -40,4 +49,5 @@ Future<bool> isCurrentUserAdmin() async {
   }
 }
 
+/// 🔹 الاسم البديل للدالة لضمان التوافق
 Future<bool> checkIsAdmin() => isCurrentUserAdmin();

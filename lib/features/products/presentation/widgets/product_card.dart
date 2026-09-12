@@ -29,49 +29,21 @@ class ProductCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // صورة المنتج مع شارة B2B
+            // صورة المنتج
             Expanded(
-              child: Stack(
-                children: [
-                  Container(
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade100,
-                      borderRadius: const BorderRadius.vertical(
-                        top: Radius.circular(16),
-                      ),
-                    ),
-                    child: Icon(
-                      Icons.inventory_2_outlined,
-                      size: 50,
-                      color: Colors.grey.shade400,
-                    ),
+              child: Container(
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade100,
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(16),
                   ),
-                  if (product.isB2BAvailable)
-                    Positioned(
-                      top: 8,
-                      right: isArabic ? 8 : null,
-                      left: isArabic ? null : 8,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.primaryGreen,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          isArabic ? 'شركات' : 'B2B',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
-                ],
+                ),
+                child: Icon(
+                  Icons.inventory_2_outlined,
+                  size: 50,
+                  color: Colors.grey.shade400,
+                ),
               ),
             ),
 
