@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:taamol_tech/core/constants/app_colors.dart';
 import 'package:taamol_tech/features/admin/pages/admin_dashboard_screen.dart';
 import 'package:taamol_tech/main.dart';
+import 'package:taamol_tech/features/auth/data/auth_service.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -16,8 +17,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   String userName = 'جاري التحميل...';
   String userEmail = 'جاري التحميل...';
   String userRole = 'مستخدم';
+  bool _isAdmin = false;
   bool _isLoading = true;
-
   @override
   void initState() {
     super.initState();
@@ -26,54 +27,79 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   // 🔹 جلب بيانات المستخدم الحالي من Supabase
   Future<void> _fetchUserData() async {
+  final user = _supabase.auth.currentUser;
+
+  if (user == null) {
+    if (!mounted) return;
+
+    setState(() {
+      userRole = 'مستخدم';
+      _isAdmin = false;
+      _isLoading = false;
+    });
+
+    return;
+  }
+
+  try {
+    // Email comes directly from Supabase Auth
+    final email = user.email ?? 'لا يوجد بريد إلكتروني';
+
+    // Check admin status using the same service
+    // used by Admin Dashboard
+    final isAdmin = await isCurrentUserAdmin();
+
+    String name = 'مستخدم تعامل';
+    String profileEmail = email;
+
+    // Get profile information separately
     try {
-      final user = _supabase.auth.currentUser;
+      final response = await _supabase
+          .from('profiles')
+          .select('full_name, email')
+          .eq('id', user.id)
+          .maybeSingle();
 
-      if (user != null) {
-        // 1. تعيين البريد الإلكتروني المبدئي من كائن Auth
-        setState(() {
-          userEmail = user.email ?? 'لا يوجد بريد إلكتروني';
-        });
+      if (response != null) {
+        name = response['full_name']?.toString().trim().isNotEmpty == true
+            ? response['full_name'].toString()
+            : 'مستخدم تعامل';
 
-        // 2. جلب الاسم والرتبة من جدول profiles
-        final response = await _supabase
-            .from('profiles')
-            .select('full_name, email, is_admin')
-            .eq('id', user.id)
-            .maybeSingle();
-
-        if (response != null && mounted) {
-          final dynamic rawIsAdmin = response['is_admin'];
-          final bool isAdmin =
-              rawIsAdmin == true ||
-              rawIsAdmin.toString().toLowerCase() == 'true' ||
-              rawIsAdmin == 1;
-
-          setState(() {
-            userName = response['full_name'] ?? 'مستخدم تعامل';
-            if (response['email'] != null &&
-                response['email'].toString().isNotEmpty) {
-              userEmail = response['email'];
-            }
-            userRole = isAdmin ? 'مدير النظام (Admin)' : 'مستخدم';
-            _isLoading = false;
-          });
-        } else if (mounted) {
-          setState(() {
-            userName = user.userMetadata?['full_name'] ?? 'مستخدم تعامل';
-            _isLoading = false;
-          });
+        if (response['email']?.toString().trim().isNotEmpty == true) {
+          profileEmail = response['email'].toString();
         }
       }
     } catch (e) {
-      debugPrint('Error fetching profile: $e');
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
+      debugPrint('PROFILE DATA ERROR: $e');
     }
+
+    if (!mounted) return;
+
+    setState(() {
+      userName = name;
+      userEmail = profileEmail;
+
+      _isAdmin = isAdmin;
+      userRole = isAdmin ? 'مدير النظام (Admin)' : 'مستخدم';
+
+      _isLoading = false;
+    });
+
+    debugPrint('PROFILE: user = ${user.email}');
+    debugPrint('PROFILE: isAdmin = $isAdmin');
+  } catch (e, stackTrace) {
+    debugPrint('PROFILE ERROR: $e');
+    debugPrint('$stackTrace');
+
+    if (!mounted) return;
+
+    setState(() {
+      _isAdmin = false;
+      userRole = 'مستخدم';
+      _isLoading = false;
+    });
   }
+}
 
   // 🔹 تسجيل الخروج
   Future<void> _signOut() async {
@@ -159,9 +185,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       vertical: 4,
                     ),
                     decoration: BoxDecoration(
-                      color: userRole.contains('Admin')
-                          ? Colors.amber.shade100
-                          : AppColors.primaryCyan.withAlpha(20),
+                      color: _isAdmin
+                      ? Colors.amber.shade100
+                      : AppColors.primaryCyan.withAlpha(20),
+
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
@@ -210,7 +237,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           title: isArabic ? 'الإعدادات' : 'Settings',
                           onTap: () {},
                         ),
-                        if (userRole.contains('Admin')) ...[
+                        if (_isAdmin) ...[
                           const Divider(height: 1),
                           _buildProfileTile(
                             icon: Icons.dashboard_customize_outlined,
