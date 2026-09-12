@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:taamol_tech/features/auth/presentation/screens/login_screen.dart';
+import 'package:taamol_tech/features/products/presentation/pages/edit_product_screen.dart';
 import '../../../../core/constants/app_colors.dart';
-import '../../../auth/data/auth_service.dart';
 import '../../../auth/presentation/controllers/language_controller.dart';
-import '../../../auth/presentation/screens/login_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -13,40 +13,77 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  // جلب المستخدم الحالي من Supabase
+  // جلب المستخدم الحالي من Auth
   final User? currentUser = Supabase.instance.client.auth.currentUser;
 
-  late String userName;
-  late String userId;
-  late String userRole;
-  late String userEmail;
+  // متغيرات حالة المستخدم
+  String userName = "";
+  String userId = "";
+  String userRole = "User";
+  String userEmail = "";
+  bool isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    final user = currentUser;
-    final metadata = user?.userMetadata ?? <String, dynamic>{};
-    userName = metadata['full_name']?.toString().trim().isNotEmpty == true
-        ? metadata['full_name'].toString()
-        : user?.email?.split('@').first ?? 'User';
-    userId = user?.id ?? '';
-    userEmail = user?.email ?? '';
-    userRole = '';
-    _loadUserRole();
+    if (currentUser != null) {
+      _fetchUserProfile();
+    } else {
+      setState(() => isLoading = false);
+    }
   }
 
-  Future<void> _loadUserRole() async {
-    if (currentUser == null) return;
-    final isAdmin = await isCurrentUserAdmin();
-    if (!mounted) return;
-    setState(() => userRole = isAdmin ? 'Admin' : 'User');
+  // 🔹 دالة جلب البيانات من جدول profiles في Supabase
+  Future<void> _fetchUserProfile() async {
+    try {
+      final response = await Supabase.instance.client
+          .from('profiles')
+          .select('full_name, email, is_admin')
+          .eq('id', currentUser!.id)
+          .maybeSingle();
+
+      if (response != null && mounted) {
+        final dynamic rawIsAdmin = response['is_admin'];
+        // التحقق مما إذا كان المستخدم أدمن
+        final bool isAdmin = rawIsAdmin == true || 
+                             rawIsAdmin.toString().toLowerCase() == 'true' || 
+                             rawIsAdmin == 1;
+
+        setState(() {
+          userName = response['full_name'] ?? currentUser?.email?.split('@').first ?? 'مستخدم';
+          userEmail = response['email'] ?? currentUser?.email ?? '';
+          userId = currentUser!.id.substring(0, 8).toUpperCase();
+          
+          // إذا كان is_admin = true تصبح الرتبة Admin
+          userRole = isAdmin ? 'Admin' : 'User';
+          isLoading = false;
+        });
+      } else {
+        _setFallbackUserData();
+      }
+    } catch (e) {
+      debugPrint('Error fetching user profile: $e');
+      if (mounted) {
+        _setFallbackUserData();
+      }
+    }
+  }
+
+  void _setFallbackUserData() {
+    setState(() {
+      userName = currentUser?.userMetadata?['full_name'] ?? currentUser?.email?.split('@').first ?? 'مستخدم';
+      userEmail = currentUser?.email ?? '';
+      userId = currentUser?.id.substring(0, 8).toUpperCase() ?? '';
+      userRole = 'User';
+      isLoading = false;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     final bool isArabic = Localizations.localeOf(context).languageCode == 'ar';
-    final bool isGuest =
-        currentUser == null; // تحديد ما إذا كان المستخدم زائراً
+    final bool isGuest = currentUser == null;
+    final bool isAdmin = userRole.toLowerCase() == 'admin';
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -63,129 +100,165 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
         centerTitle: true,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          children: [
-            // 1. عرض بطاقة الزائر أو بطاقة المستخدم المسجل
-            isGuest ? _buildGuestHeader(isArabic) : _buildUserHeader(),
-            const SizedBox(height: 24),
-
-            // 2. قائمة الإعدادات والتفضيلات (متاحة للجميع)
-            _buildSectionTitle(
-              isArabic ? 'الإعدادات والتفضيلات' : 'Settings & Preferences',
-            ),
-            const SizedBox(height: 12),
-
-            Container(
-              decoration: BoxDecoration(
-                color: AppColors.cardWhite,
-                borderRadius: BorderRadius.circular(16),
-              ),
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator(color: AppColors.deepPurple))
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(20.0),
               child: Column(
                 children: [
-                  // تغيير اللغة
-                  ListTile(
-                    leading: const Icon(
-                      Icons.language,
-                      color: AppColors.primaryCyan,
+                  // 1. بطاقة المستخدم أو الزائر
+                  isGuest ? _buildGuestHeader(isArabic) : _buildUserHeader(),
+                  const SizedBox(height: 24),
+
+                  // 🚨 2. قسم لوحة تحكم الأدمن (يظهر فقط إذا كان المستخدم Admin)
+                  if (!isGuest && isAdmin) ...[
+                    _buildSectionTitle(isArabic ? 'أدوات الإدارة (Admin Panel)' : 'Admin Control Panel'),
+                    const SizedBox(height: 12),
+                    _buildAdminSection(isArabic),
+                    const SizedBox(height: 24),
+                  ],
+
+                  // 3. قائمة الإعدادات والتفضيلات
+                  _buildSectionTitle(isArabic ? 'الإعدادات والتفضيلات' : 'Settings & Preferences'),
+                  const SizedBox(height: 12),
+
+                  Container(
+                    decoration: BoxDecoration(
+                      color: AppColors.cardWhite,
+                      borderRadius: BorderRadius.circular(16),
                     ),
-                    title: Text(
-                      isArabic ? 'اللغة / Language' : 'Language / اللغة',
-                      style: const TextStyle(
-                        fontFamily: 'Tajawal',
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                      ),
+                    child: Column(
+                      children: [
+                        ListTile(
+                          leading: const Icon(Icons.language, color: AppColors.primaryCyan),
+                          title: Text(
+                            isArabic ? 'اللغة / Language' : 'Language / اللغة',
+                            style: const TextStyle(fontFamily: 'Tajawal', fontWeight: FontWeight.bold, fontSize: 14),
+                          ),
+                          trailing: Text(
+                            isArabic ? 'العربية' : 'English',
+                            style: const TextStyle(color: AppColors.deepPurple, fontWeight: FontWeight.bold),
+                          ),
+                          onTap: () {
+                            LanguageController.toggleLanguage();
+                            setState(() {});
+                          },
+                        ),
+                      ],
                     ),
-                    trailing: Text(
-                      isArabic ? 'العربية' : 'English',
-                      style: const TextStyle(
-                        color: AppColors.deepPurple,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    onTap: () {
-                      LanguageController.toggleLanguage();
-                      setState(() {});
-                    },
                   ),
+                  const SizedBox(height: 24),
+
+                  // 4. الدعم والمساعدة
+                  _buildSectionTitle(isArabic ? 'الدعم والمساعدة' : 'Support & Help'),
+                  const SizedBox(height: 12),
+
+                  Container(
+                    decoration: BoxDecoration(
+                      color: AppColors.cardWhite,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: ListTile(
+                      leading: const Icon(Icons.support_agent, color: AppColors.primaryGreen),
+                      title: Text(
+                        isArabic ? 'التواصل مع الدعم الفني' : 'Contact Support',
+                        style: const TextStyle(fontFamily: 'Tajawal', fontWeight: FontWeight.bold, fontSize: 14),
+                      ),
+                      trailing: const Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey),
+                      onTap: () {},
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+
+                  // 5. زر تسجيل الخروج
+                  if (!isGuest)
+                    SizedBox(
+                      width: double.infinity,
+                      height: 50,
+                      child: OutlinedButton.icon(
+                        onPressed: () async {
+                          await Supabase.instance.client.auth.signOut();
+                          if (mounted) {
+                            Navigator.pushAndRemoveUntil(
+                              context,
+                              MaterialPageRoute(builder: (_) => const LoginScreen()),
+                              (route) => false,
+                            );
+                          }
+                        },
+                        icon: const Icon(Icons.logout, color: Colors.redAccent),
+                        label: Text(
+                          isArabic ? 'تسجيل الخروج' : 'Log Out',
+                          style: const TextStyle(
+                            color: Colors.redAccent,
+                            fontFamily: 'Tajawal',
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: Colors.redAccent),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
+                    ),
                 ],
               ),
             ),
-            const SizedBox(height: 24),
+    );
+  }
 
-            // 3. الدعم والمساعدة
-            _buildSectionTitle(isArabic ? 'الدعم والمساعدة' : 'Support & Help'),
-            const SizedBox(height: 12),
-
-            Container(
-              decoration: BoxDecoration(
-                color: AppColors.cardWhite,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: ListTile(
-                leading: const Icon(
-                  Icons.support_agent,
-                  color: AppColors.primaryGreen,
-                ),
-                title: Text(
-                  isArabic ? 'التواصل مع الدعم الفني' : 'Contact Support',
-                  style: const TextStyle(
-                    fontFamily: 'Tajawal',
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                  ),
-                ),
-                trailing: const Icon(
-                  Icons.arrow_forward_ios,
-                  size: 14,
-                  color: Colors.grey,
-                ),
-                onTap: () {},
-              ),
+  // 🔹 واجهة خيارات الأدمن الزائدة
+  Widget _buildAdminSection(bool isArabic) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.cardWhite,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.deepPurple.withValues(alpha: 0.3), width: 1.5),
+      ),
+      child: Column(
+        children: [
+          ListTile(
+            leading: const Icon(Icons.add_shopping_cart, color: AppColors.deepPurple),
+            title: Text(
+              isArabic ? 'إضافة منتج جديد' : 'Add New Product',
+              style: const TextStyle(fontFamily: 'Tajawal', fontWeight: FontWeight.bold, fontSize: 14),
             ),
-            const SizedBox(height: 32),
-
-            // 4. زر تسجيل الخروج للمستخدم المسجل
-            if (!isGuest)
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: OutlinedButton.icon(
-                  onPressed: () async {
-                    await Supabase.instance.client.auth.signOut();
-                    if (!context.mounted) return;
-                    Navigator.pushAndRemoveUntil(
-                      context,
-                      MaterialPageRoute(builder: (_) => const LoginScreen()),
-                      (route) => false,
-                    );
-                  },
-                  icon: const Icon(Icons.logout, color: Colors.redAccent),
-                  label: Text(
-                    isArabic ? 'تسجيل الخروج' : 'Log Out',
-                    style: const TextStyle(
-                      color: Colors.redAccent,
-                      fontFamily: 'Tajawal',
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: Colors.redAccent),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                ),
-              ),
-          ],
-        ),
+            trailing: const Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey),
+            onTap: () {
+              // TODO: الانتقال لشاشة إضافة منتج جديد
+            },
+          ),
+          const Divider(height: 1),
+          ListTile(
+            leading: const Icon(Icons.inventory_2_outlined, color: AppColors.deepPurple),
+            title: Text(
+              isArabic ? 'إدارة المنتجات والتعديل' : 'Manage Products',
+              style: const TextStyle(fontFamily: 'Tajawal', fontWeight: FontWeight.bold, fontSize: 14),
+            ),
+            trailing: const Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey),
+            onTap: () {
+              // TODO: الانتقال لشاشة إدارة المنتجات
+            },
+          ),
+          const Divider(height: 1),
+          ListTile(
+            leading: const Icon(Icons.receipt_long, color: AppColors.deepPurple),
+            title: Text(
+              isArabic ? 'إدارة طلبات العملاء' : 'Manage Customer Orders',
+              style: const TextStyle(fontFamily: 'Tajawal', fontWeight: FontWeight.bold, fontSize: 14),
+            ),
+            trailing: const Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey),
+            onTap: () {
+              // TODO: الانتقال لشاشة إدارة الطلبات
+            },
+          ),
+        ],
       ),
     );
   }
 
-  // ✨ بطاقة خاصة بالحالة عندما يكون المستخدم زائراً (Guest Mode)
   Widget _buildGuestHeader(bool isArabic) {
     return Container(
       width: double.infinity,
@@ -219,18 +292,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
               fontSize: 18,
               fontWeight: FontWeight.bold,
               color: AppColors.deepPurple,
-              fontFamily: 'Tajawal',
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            isArabic
-                ? 'قم بتسجيل الدخول للاستفادة من حفظ السلة، متابعة عروض الأسعار، وإدارة حسابك.'
-                : 'Log in to save items, track quote requests, and manage your account.',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 13,
-              color: Colors.grey.shade600,
               fontFamily: 'Tajawal',
             ),
           ),
@@ -268,7 +329,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  // بطاقة بيانات المستخدم المسجل
   Widget _buildUserHeader() {
     return Container(
       width: double.infinity,
@@ -305,7 +365,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
-                  userRole.isEmpty ? 'No role assigned' : userRole,
+                  userRole,
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 10,
@@ -344,11 +404,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(
-                  Icons.badge_outlined,
-                  size: 16,
-                  color: Colors.grey.shade600,
-                ),
+                Icon(Icons.badge_outlined, size: 16, color: Colors.grey.shade600),
                 const SizedBox(width: 6),
                 Text(
                   'ID: $userId',
@@ -368,11 +424,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Color _getRoleColor(String role) {
-    switch (role) {
-      case 'Admin':
+    switch (role.toLowerCase()) {
+      case 'admin':
         return AppColors.deepPurple;
-      case 'B2B Corporate':
-        return AppColors.primaryGreen;
       default:
         return AppColors.primaryCyan;
     }

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 final _supabase = Supabase.instance.client;
@@ -15,14 +16,28 @@ Future<AuthResponse> signIn({required String email, required String password}) {
 }
 
 Future<bool> isCurrentUserAdmin() async {
-  final user = _supabase.auth.currentUser;
-  if (user == null) return false;
+  try {
+    final user = _supabase.auth.currentUser;
+    if (user == null) return false;
 
-  final profile = await _supabase
-      .from('profiles')
-      .select('is_admin')
-      .eq('id', user.id)
-      .maybeSingle();
+    final response = await _supabase
+        .from('profiles')
+        .select('is_admin')
+        .eq('id', user.id)
+        .maybeSingle();
 
-  return profile?['is_admin'] == true;
+    if (response != null) {
+      final dynamic rawIsAdmin = response['is_admin'];
+      // Flexible conversion for bool, String, or int
+      return rawIsAdmin == true ||
+          rawIsAdmin.toString().toLowerCase() == 'true' ||
+          rawIsAdmin == 1;
+    }
+    return false;
+  } catch (e) {
+    debugPrint('Error checking admin status: $e');
+    return false;
+  }
 }
+
+Future<bool> checkIsAdmin() => isCurrentUserAdmin();
