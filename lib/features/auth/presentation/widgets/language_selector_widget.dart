@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:taamol_tech/core/constants/app_colors.dart' show AppColors;
+import 'package:taamol_tech/core/constants/navigation/app_navigator.dart';
 import 'package:taamol_tech/features/auth/presentation/controllers/language_controller.dart';
 import 'package:taamol_tech/features/auth/presentation/screens/onboarding_screen.dart';
 
@@ -18,6 +19,7 @@ class TkamolTechApp extends StatelessWidget {
       builder: (context, currentLocale, child) {
         return MaterialApp(
           title: 'Tkamol Tech',
+          navigatorKey: rootNavigatorKey,
           debugShowCheckedModeBanner: false,
           locale: currentLocale,
 

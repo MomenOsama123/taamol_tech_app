@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:taamol_tech/core/constants/app_colors.dart';
 import 'package:taamol_tech/features/home/presentation/pages/main_screen.dart';
+import 'forget_password_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -25,40 +26,39 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  // دالة تسجيل الدخول الربطية مع Supabase
   // دالة تسجيل الدخول عبر Supabase
-Future<void> _handleLogin() async {
-  if (!_formKey.currentState!.validate()) return;
+  Future<void> _handleLogin() async {
+    if (!_formKey.currentState!.validate()) return;
 
-  setState(() => _isLoading = true);
+    setState(() => _isLoading = true);
 
-  try {
-    // 1. إرسال البريد وكلمة المرور إلى Supabase Auth
-    final response = await Supabase.instance.client.auth.signInWithPassword(
-      email: _emailController.text.trim(),
-      password: _passwordController.text.trim(),
-    );
-
-    // 2. عند نجاح التسجيل، الانتقال المباشر للواجهة الرئيسية MainScreen
-    if (response.user != null && mounted) {
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (context) => const MainScreen()),
-        (route) => false,
+    try {
+      // 1. إرسال البريد وكلمة المرور إلى Supabase Auth
+      final response = await Supabase.instance.client.auth.signInWithPassword(
+        email: _emailController.text.trim(),
+        password: _passwordController.text.trim(),
       );
+
+      // 2. عند نجاح التسجيل، الانتقال المباشر للواجهة الرئيسية MainScreen
+      if (response.user != null && mounted) {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => const MainScreen()),
+          (route) => false,
+        );
+      }
+    } on AuthException catch (error) {
+      if (mounted) {
+        _showSnackBar(error.message, isError: true);
+      }
+    } catch (error) {
+      if (mounted) {
+        _showSnackBar('حدث خطأ غير متوقع، يرجى المحاولة لاحقاً', isError: true);
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
-  } on AuthException catch (error) {
-    if (mounted) {
-      _showSnackBar(error.message, isError: true);
-    }
-  } catch (error) {
-    if (mounted) {
-      _showSnackBar('حدث خطأ غير متوقع، يرجى المحاولة لاحقاً', isError: true);
-    }
-  } finally {
-    if (mounted) setState(() => _isLoading = false);
   }
-}
 
   void _showSnackBar(String message, {bool isError = false}) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -221,7 +221,30 @@ Future<void> _handleLogin() async {
                     ),
                   ),
                 ),
-                const SizedBox(height: 30),
+
+                // 4.5 رابط نسيت كلمة المرور
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const ForgotPasswordScreen(),
+                        ),
+                      );
+                    },
+                    child: Text(
+                      isArabic ? 'نسيت كلمة المرور؟' : 'Forgot password?',
+                      style: const TextStyle(
+                        color: AppColors.deepPurple,
+                        fontWeight: FontWeight.w600,
+                        fontFamily: 'Tajawal',
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10),
 
                 // 5. زر تسجيل الدخول
                 SizedBox(
