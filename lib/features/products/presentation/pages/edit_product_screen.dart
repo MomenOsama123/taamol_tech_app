@@ -1,15 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:taamol_tech/core/constants/app_colors.dart';
 import 'package:taamol_tech/core/widgets/custom_button.dart';
 import 'package:taamol_tech/core/widgets/custom_text_field.dart';
 import 'package:taamol_tech/features/auth/data/auth_service.dart';
 import 'package:taamol_tech/features/products/data/models/product_model.dart';
+import 'package:taamol_tech/features/products/data/product_service.dart';
 
 class EditProductScreen extends StatefulWidget {
-  final ProductModel? product; // إذا كان null فهذا يعني إضافة منتج جديد
+  final ProductModel? product;
 
-  const EditProductScreen({super.key, this.product});
+  const EditProductScreen({
+    super.key,
+    this.product,
+  });
 
   @override
   State<EditProductScreen> createState() => _EditProductScreenState();
@@ -18,36 +21,54 @@ class EditProductScreen extends StatefulWidget {
 class _EditProductScreenState extends State<EditProductScreen> {
   final _formKey = GlobalKey<FormState>();
 
-  late TextEditingController _nameArController;
-  late TextEditingController _nameEnController;
-  late TextEditingController _priceController;
-  late TextEditingController _descArController;
+  late final TextEditingController _nameArController;
+  late final TextEditingController _nameEnController;
+  late final TextEditingController _priceController;
+  late final TextEditingController _descArController;
+  late final TextEditingController _descEnController;
+  late final TextEditingController _imageUrlController;
 
   late bool _isAvailable;
   late bool _isB2BAvailable;
   late String _selectedCategory;
+
   bool _isSaving = false;
+
+  bool get _isEditing => widget.product != null;
 
   @override
   void initState() {
     super.initState();
-    // تعبئة البيانات السابقة في حال كان تعديل أو ضبط قيم افتراضية للإضافة
+
+    final product = widget.product;
+
     _nameArController = TextEditingController(
-      text: widget.product?.nameAr ?? '',
-    );
-    _nameEnController = TextEditingController(
-      text: widget.product?.nameEn ?? '',
-    );
-    _priceController = TextEditingController(
-      text: widget.product?.price.toString() ?? '',
-    );
-    _descArController = TextEditingController(
-      text: widget.product?.descriptionAr ?? '',
+      text: product?.nameAr ?? '',
     );
 
-    _isAvailable = widget.product?.isAvailable ?? true;
-    _isB2BAvailable = widget.product?.isB2BAvailable ?? true;
-    _selectedCategory = widget.product?.category ?? 'laptops';
+    _nameEnController = TextEditingController(
+      text: product?.nameEn ?? '',
+    );
+
+    _priceController = TextEditingController(
+      text: product?.price.toString() ?? '',
+    );
+
+    _descArController = TextEditingController(
+      text: product?.descriptionAr ?? '',
+    );
+
+    _descEnController = TextEditingController(
+      text: product?.descriptionEn ?? '',
+    );
+
+    _imageUrlController = TextEditingController(
+      text: product?.imageUrl ?? '',
+    );
+
+    _isAvailable = product?.isAvailable ?? true;
+    _isB2BAvailable = product?.isB2BAvailable ?? true;
+    _selectedCategory = product?.category ?? 'laptops';
   }
 
   @override
@@ -56,92 +77,124 @@ class _EditProductScreenState extends State<EditProductScreen> {
     _nameEnController.dispose();
     _priceController.dispose();
     _descArController.dispose();
+    _descEnController.dispose();
+    _imageUrlController.dispose();
+
     super.dispose();
   }
 
-  // دالة حفظ أو تحديث بيانات المنتج في Supabase
   Future<void> _saveProduct() async {
-    if (_isSaving || !_formKey.currentState!.validate()) return;
+    if (_isSaving) return;
 
-    if (!await isCurrentUserAdmin()) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Only admins can manage products.')),
-      );
+    if (!_formKey.currentState!.validate()) {
       return;
     }
 
-    final price = double.tryParse(_priceController.text.trim());
-    if (price == null || price < 0) return;
+    final isAdmin = await isCurrentUserAdmin();
 
-    setState(() => _isSaving = true);
+    if (!isAdmin) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Only admins can manage products.'),
+        ),
+      );
+
+      return;
+    }
+
+    final price = double.tryParse(
+      _priceController.text.trim(),
+    );
+
+    if (price == null || price < 0) {
+      return;
+    }
+
+    setState(() {
+      _isSaving = true;
+    });
 
     try {
-      final supabase = Supabase.instance.client;
-
-      final productData = {
-        'name_ar': _nameArController.text.trim(),
-        'name_en': _nameEnController.text.trim().isEmpty
-            ? _nameArController.text.trim()
-            : _nameEnController.text.trim(),
-        'description_ar': _descArController.text.trim(),
-        'description_en': _descArController.text.trim(),
-        'price': price,
-        'category': _selectedCategory,
-        'is_available': _isAvailable,
-        'is_b2b_available': _isB2BAvailable,
-        'image_url':
-            widget.product?.imageUrl ?? 'https://via.placeholder.com/200',
-      };
-
-      if (widget.product != null) {
-        // تحديث المنتج الحالي في جدول products بناءً على id
-        await supabase
-            .from('products')
-            .update(productData)
-            .eq('id', widget.product!.id);
+      if (_isEditing) {
+        await updateProduct(
+          id: widget.product!.id,
+          nameAr: _nameArController.text.trim(),
+          nameEn: _nameEnController.text.trim().isEmpty
+              ? _nameArController.text.trim()
+              : _nameEnController.text.trim(),
+          descriptionAr: _descArController.text.trim(),
+          descriptionEn: _descEnController.text.trim(),
+          price: price,
+          category: _selectedCategory,
+          imageUrl: _imageUrlController.text.trim(),
+          isAvailable: _isAvailable,
+          isB2BAvailable: _isB2BAvailable,
+        );
       } else {
-        // إضافة منتج جديد لجدول products
-        await supabase.from('products').insert(productData);
+        await createProduct(
+          nameAr: _nameArController.text.trim(),
+          nameEn: _nameEnController.text.trim().isEmpty
+              ? _nameArController.text.trim()
+              : _nameEnController.text.trim(),
+          descriptionAr: _descArController.text.trim(),
+          descriptionEn: _descEnController.text.trim(),
+          price: price,
+          category: _selectedCategory,
+          imageUrl: _imageUrlController.text.trim(),
+          isAvailable: _isAvailable,
+          isB2BAvailable: _isB2BAvailable,
+        );
       }
 
-      if (mounted) {
-        Navigator.pop(context, true); // العودة وإعلام القائمة بالتحديث
-      }
-    } on PostgrestException catch (error) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(error.message), backgroundColor: Colors.red),
-        );
-      }
-    } catch (error) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('حدث خطأ غير متوقع: $error'),
-            backgroundColor: Colors.red,
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            _isEditing
+                ? 'تم تحديث المنتج بنجاح'
+                : 'تم إضافة المنتج بنجاح',
           ),
-        );
-      }
+        ),
+      );
+
+      Navigator.pop(context, true);
+    } catch (error) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'حدث خطأ أثناء حفظ المنتج:\n$error',
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
     } finally {
       if (mounted) {
-        setState(() => _isSaving = false);
+        setState(() {
+          _isSaving = false;
+        });
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final bool isArabic = Localizations.localeOf(context).languageCode == 'ar';
-    final bool isEditing = widget.product != null;
+    final isArabic =
+        Localizations.localeOf(context).languageCode == 'ar';
 
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
         title: Text(
-          isEditing
+          _isEditing
               ? (isArabic ? 'تعديل المنتج' : 'Edit Product')
-              : (isArabic ? 'إضافة منتج جديد' : 'Add New Product'),
+              : (isArabic
+                  ? 'إضافة منتج جديد'
+                  : 'Add New Product'),
           style: const TextStyle(
             color: AppColors.deepPurple,
             fontFamily: 'Tajawal',
@@ -151,42 +204,62 @@ class _EditProductScreenState extends State<EditProductScreen> {
         backgroundColor: AppColors.cardWhite,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.deepPurple),
+          icon: const Icon(
+            Icons.arrow_back,
+            color: AppColors.deepPurple,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20.0),
+        padding: const EdgeInsets.all(20),
         child: Form(
           key: _formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // اسم المنتج بالعربي
               CustomTextField(
                 controller: _nameArController,
                 labelText: 'اسم المنتج (بالعربي)',
-                validator: (val) => val == null || val.trim().isEmpty
-                    ? 'يرجى كتابة الاسم'
-                    : null,
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'يرجى كتابة اسم المنتج';
+                  }
+
+                  return null;
+                },
               ),
+
               const SizedBox(height: 16),
 
-              // السعر
+              CustomTextField(
+                controller: _nameEnController,
+                labelText: 'Product Name (English)',
+              ),
+
+              const SizedBox(height: 16),
+
               CustomTextField(
                 controller: _priceController,
-                keyboardType: TextInputType.number,
-                labelText: 'السعر (ر.س)',
-                validator: (val) =>
-                    val == null ||
-                        double.tryParse(val.trim()) == null ||
-                        double.parse(val.trim()) < 0
-                    ? 'يرجى إدخال سعر صحيح'
-                    : null,
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
+                labelText: 'السعر',
+                validator: (value) {
+                  final price = double.tryParse(
+                    value?.trim() ?? '',
+                  );
+
+                  if (price == null || price < 0) {
+                    return 'يرجى إدخال سعر صحيح';
+                  }
+
+                  return null;
+                },
               ),
+
               const SizedBox(height: 16),
 
-              // اختيار القسم
               DropdownButtonFormField<String>(
                 initialValue: _selectedCategory,
                 decoration: const InputDecoration(
@@ -209,73 +282,98 @@ class _EditProductScreenState extends State<EditProductScreen> {
                     child: Text('قرطاسية ومكتبية'),
                   ),
                 ],
-                onChanged: (val) => setState(() => _selectedCategory = val!),
+                onChanged: (value) {
+                  if (value == null) return;
+
+                  setState(() {
+                    _selectedCategory = value;
+                  });
+                },
               ),
+
               const SizedBox(height: 16),
 
-              // الوصف
               CustomTextField(
                 controller: _descArController,
-                maxLines: 3,
-                labelText: 'وصف المنتج',
+                maxLines: 4,
+                labelText: 'وصف المنتج بالعربي',
               ),
+
+              const SizedBox(height: 16),
+
+              CustomTextField(
+                controller: _descEnController,
+                maxLines: 4,
+                labelText: 'Product Description (English)',
+              ),
+
+              const SizedBox(height: 16),
+
+              CustomTextField(
+                controller: _imageUrlController,
+                keyboardType: TextInputType.url,
+                labelText: 'رابط صورة المنتج',
+              ),
+
               const SizedBox(height: 20),
 
-              // مفتاح حالة توفر المنتج (متاح / غير متاح)
               Card(
                 color: AppColors.cardWhite,
                 child: SwitchListTile(
-                  title: Text(
-                    isArabic ? 'توفر المنتج للبيع' : 'Product Availability',
-                    style: const TextStyle(
+                  title: const Text(
+                    'توفر المنتج للبيع',
+                    style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontFamily: 'Tajawal',
                     ),
                   ),
                   subtitle: Text(
                     _isAvailable
-                        ? (isArabic
-                              ? 'المنتج متاح حالياً للمستخدمين'
-                              : 'Currently Available')
-                        : (isArabic
-                              ? 'المنتج غير متاح (نفذت الكمية)'
-                              : 'Out of Stock'),
-                    style: TextStyle(
-                      color: _isAvailable ? Colors.green : Colors.red,
-                      fontSize: 12,
-                    ),
+                        ? 'المنتج متاح حالياً'
+                        : 'المنتج غير متاح',
                   ),
                   value: _isAvailable,
                   activeThumbColor: AppColors.primaryCyan,
-                  onChanged: (val) => setState(() => _isAvailable = val),
+                  onChanged: (value) {
+                    setState(() {
+                      _isAvailable = value;
+                    });
+                  },
                 ),
               ),
 
-              // مفتاح توفر المنتج للشركات (B2B)
               Card(
                 color: AppColors.cardWhite,
                 child: SwitchListTile(
-                  title: Text(
-                    isArabic
-                        ? 'إتاحة لطلبات الشركات (B2B)'
-                        : 'Available for B2B',
-                    style: const TextStyle(
+                  title: const Text(
+                    'إتاحة لطلبات الشركات (B2B)',
+                    style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontFamily: 'Tajawal',
                     ),
                   ),
                   value: _isB2BAvailable,
                   activeThumbColor: AppColors.deepPurple,
-                  onChanged: (val) => setState(() => _isB2BAvailable = val),
+                  onChanged: (value) {
+                    setState(() {
+                      _isB2BAvailable = value;
+                    });
+                  },
                 ),
               ),
+
               const SizedBox(height: 30),
 
-              // زر الحفظ
               CustomButton(
                 onPressed: _saveProduct,
                 isLoading: _isSaving,
-                label: isArabic ? 'حفظ التغيرات' : 'Save Changes',
+                label: _isEditing
+                    ? (isArabic
+                        ? 'حفظ التغييرات'
+                        : 'Save Changes')
+                    : (isArabic
+                        ? 'إضافة المنتج'
+                        : 'Add Product'),
               ),
             ],
           ),

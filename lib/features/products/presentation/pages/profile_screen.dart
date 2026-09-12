@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:taamol_tech/core/constants/app_colors.dart';
-import 'package:taamol_tech/core/constants/app_strings.dart';
 import 'package:taamol_tech/main.dart';
 
 class ProfileScreen extends StatefulWidget {
