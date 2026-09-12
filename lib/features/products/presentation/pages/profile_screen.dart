@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:taamol_tech/core/constants/app_colors.dart';
+import 'package:taamol_tech/features/admin/screens/admin_dashboard_screen.dart';
 import 'package:taamol_tech/main.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -43,13 +44,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
         if (response != null && mounted) {
           final dynamic rawIsAdmin = response['is_admin'];
-          final bool isAdmin = rawIsAdmin == true ||
+          final bool isAdmin =
+              rawIsAdmin == true ||
               rawIsAdmin.toString().toLowerCase() == 'true' ||
               rawIsAdmin == 1;
 
           setState(() {
             userName = response['full_name'] ?? 'مستخدم تعامل';
-            if (response['email'] != null && response['email'].toString().isNotEmpty) {
+            if (response['email'] != null &&
+                response['email'].toString().isNotEmpty) {
               userEmail = response['email'];
             }
             userRole = isAdmin ? 'مدير النظام (Admin)' : 'مستخدم';
@@ -77,7 +80,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     try {
       await _supabase.auth.signOut();
       if (mounted) {
-        Navigator.of(context).pushReplacementNamed('/login'); // أو العودة لشاشة التسجيل
+        Navigator.of(context).pushReplacementNamed('/login');
       }
     } catch (e) {
       if (mounted) {
@@ -151,7 +154,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                   // شارة الرتبة (Admin / User)
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: userRole.contains('Admin')
                           ? Colors.amber.shade100
@@ -204,6 +210,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           title: isArabic ? 'الإعدادات' : 'Settings',
                           onTap: () {},
                         ),
+                        if (userRole.contains('Admin')) ...[
+                          const Divider(height: 1),
+                          _buildProfileTile(
+                            icon: Icons.dashboard_customize_outlined,
+                            title: isArabic
+                                ? 'لوحة تحكم الأدمن'
+                                : 'Admin Dashboard',
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const AdminDashboardScreen(),
+                                ),
+                              );
+                            },
+                          ),
+                        ],
                       ],
                     ),
                   ),
@@ -254,7 +277,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
           fontFamily: 'Tajawal',
         ),
       ),
-      trailing: const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
+      trailing: const Icon(
+        Icons.arrow_forward_ios,
+        size: 16,
+        color: Colors.grey,
+      ),
       onTap: onTap,
     );
   }

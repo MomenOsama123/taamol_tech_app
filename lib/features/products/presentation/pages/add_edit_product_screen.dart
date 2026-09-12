@@ -157,7 +157,7 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
               SwitchListTile(
                 title: const Text('المنتج متوفر في المخزون', style: TextStyle(fontFamily: 'Tajawal')),
                 value: _isAvailable,
-                activeColor: AppColors.deepPurple,
+                activeThumbColor: AppColors.deepPurple,
                 onChanged: (val) => setState(() => _isAvailable = val),
               ),
               const SizedBox(height: 24),

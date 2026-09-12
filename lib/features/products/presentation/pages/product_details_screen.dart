@@ -9,15 +9,12 @@ class ProductDetailsScreen extends StatelessWidget {
   // 🟢 ضع رقم واتساب الشركة هنا بدون (00) أو (+)
   final String companyWhatsAppNumber = '966500000000';
 
-  const ProductDetailsScreen({
-    super.key,
-    required this.product,
-  });
+  const ProductDetailsScreen({super.key, required this.product});
 
   // دالة فتح تطبيق الواتساب مع رسالة الطلب
   Future<void> _openWhatsApp(BuildContext context, bool isArabic) async {
     final String productName = product.getName(isArabic);
-    
+
     // نص الرسالة التلقائي للعميل
     final String message = isArabic
         ? 'مرحباً تكامل تك 👋\nأرغب في شراء المنتج التالي:\n- المنتج: $productName\n- رمز المنتج: #${product.id}\n- السعر: ${product.price} ر.س'
@@ -35,7 +32,9 @@ class ProductDetailsScreen extends StatelessWidget {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                isArabic ? 'تطبيق الواتساب غير مثبت على الجهاز' : 'WhatsApp is not installed on your device',
+                isArabic
+                    ? 'تطبيق الواتساب غير مثبت على الجهاز'
+                    : 'WhatsApp is not installed on your device',
               ),
             ),
           );
@@ -46,7 +45,9 @@ class ProductDetailsScreen extends StatelessWidget {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              isArabic ? 'حدث خطأ أثناء فتح الواتساب' : 'Error opening WhatsApp',
+              isArabic
+                  ? 'حدث خطأ أثناء فتح الواتساب'
+                  : 'Error opening WhatsApp',
             ),
           ),
         );
@@ -86,7 +87,7 @@ class ProductDetailsScreen extends StatelessWidget {
                         borderRadius: BorderRadius.circular(20),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.03),
+                            color: Colors.black.withValues(alpha: 0.03),
                             blurRadius: 15,
                             offset: const Offset(0, 5),
                           ),
@@ -163,7 +164,7 @@ class ProductDetailsScreen extends StatelessWidget {
                 color: AppColors.cardWhite,
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: Colors.black.withValues(alpha: 0.05),
                     blurRadius: 10,
                     offset: const Offset(0, -5),
                   ),
