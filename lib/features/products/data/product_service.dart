@@ -29,7 +29,6 @@ Future<ProductModel> createProduct({
   required String category,
   required String imageUrl,
   bool isAvailable = true,
-  bool isB2BAvailable = true,
 }) async {
   final data = await _supabase
       .from('products')
@@ -42,7 +41,6 @@ Future<ProductModel> createProduct({
         'category': category,
         'image_url': imageUrl.trim(),
         'is_available': isAvailable,
-        'is_b2b_available': isB2BAvailable,
       })
       .select()
       .single();
@@ -60,7 +58,6 @@ Future<ProductModel> updateProduct({
   required String category,
   required String imageUrl,
   bool isAvailable = true,
-  bool isB2BAvailable = true,
 }) async {
   final data = await _supabase
       .from('products')
@@ -73,7 +70,6 @@ Future<ProductModel> updateProduct({
         'category': category,
         'image_url': imageUrl.trim(),
         'is_available': isAvailable,
-        'is_b2b_available': isB2BAvailable,
       })
       .eq('id', id)
       .select()

@@ -8,7 +8,6 @@ class ProductModel {
   final String category;
   final String imageUrl;
   final bool isAvailable;
-  final bool isB2BAvailable;
 
   const ProductModel({
     required this.id,
@@ -20,7 +19,6 @@ class ProductModel {
     required this.category,
     required this.imageUrl,
     this.isAvailable = true,
-    this.isB2BAvailable = true,
   });
 
   factory ProductModel.fromMap(Map<String, dynamic> item) {
@@ -38,7 +36,6 @@ class ProductModel {
       category: item['category']?.toString() ?? 'general',
       imageUrl: item['image_url']?.toString() ?? '',
       isAvailable: item['is_available'] as bool? ?? true,
-      isB2BAvailable: item['is_b2b_available'] as bool? ?? true,
     );
   }
 
