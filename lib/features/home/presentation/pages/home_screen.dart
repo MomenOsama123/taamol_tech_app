@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:taamol_tech/core/constants/app_colors.dart';
 import 'package:taamol_tech/core/constants/app_strings.dart';
+import 'package:taamol_tech/core/constants/product_categories.dart';
+import 'package:taamol_tech/features/auth/data/auth_service.dart';
 import 'package:taamol_tech/features/products/data/models/product_model.dart';
+import 'package:taamol_tech/features/products/data/product_service.dart';
 import 'package:taamol_tech/features/products/presentation/pages/product_details_screen.dart';
-import 'package:taamol_tech/main.dart';
 import 'package:taamol_tech/features/products/presentation/pages/add_edit_product_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -16,7 +18,6 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   late Future<List<ProductModel>> _productsFuture;
-  final _supabase = supabase;
   bool _isAdmin = false;
 
   // حالة قسم الفلترة وشريط البحث
@@ -37,49 +38,16 @@ class _HomeScreenState extends State<HomeScreen> {
     super.dispose();
   }
 
-  // 🔹 فحص صلاحية الأدمن مباشرة من قاعدة البيانات profiles
+  // 🔹 فحص صلاحية الأدمن - نفس الدالة المستخدمة في باقي التطبيق (auth_service)
   Future<void> _loadAdminStatus() async {
-    try {
-      final user = _supabase.auth.currentUser;
-      if (user == null) {
-        if (mounted) setState(() => _isAdmin = false);
-        return;
-      }
-
-      final response = await _supabase
-          .from('profiles')
-          .select('is_admin')
-          .eq('id', user.id)
-          .maybeSingle();
-
-      if (response != null && mounted) {
-        final dynamic rawIsAdmin = response['is_admin'];
-        final bool isAdmin = rawIsAdmin == true ||
-            rawIsAdmin.toString().toLowerCase() == 'true' ||
-            rawIsAdmin == 1;
-
-        setState(() => _isAdmin = isAdmin);
-      }
-    } catch (e) {
-      debugPrint('Error loading admin status: $e');
-    }
+    final isAdmin = await isCurrentUserAdmin();
+    if (mounted) setState(() => _isAdmin = isAdmin);
   }
 
-  // 🔹 جلب المنتجات من Supabase
+  // 🔹 جلب المنتجات - نفس الدالة المستخدمة في لوحة تحكم الأدمن (product_service)
   Future<List<ProductModel>> _loadProducts() async {
-    try {
-      final response = await _supabase.from('products').select('*');
-      final List<dynamic> dataList = response as List<dynamic>;
-
-      return dataList.map((item) {
-        final map = Map<String, dynamic>.from(item as Map);
-        return ProductModel.fromMap(map);
-      }).where((product) => product.isAvailable).toList();
-    } catch (error, stackTrace) {
-      debugPrint('Supabase Fetch Error: $error');
-      debugPrint('StackTrace: $stackTrace');
-      rethrow;
-    }
+    final products = await fetchProducts();
+    return products.where((product) => product.isAvailable).toList();
   }
 
   Future<void> _refreshProducts() async {
@@ -129,12 +97,12 @@ class _HomeScreenState extends State<HomeScreen> {
     if (confirmed != true) return;
 
     try {
-      await _supabase.from('products').delete().eq('id', product.id);
+      await deleteProduct(product.id);
       if (mounted) setState(() => _productsFuture = _loadProducts());
-    } on PostgrestException catch (error) {
+    } catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error.message), backgroundColor: Colors.red),
+        SnackBar(content: Text('$error'), backgroundColor: Colors.red),
       );
     }
   }
@@ -238,9 +206,11 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Row(
                   children: [
                     _buildCategoryChip('all', isArabic ? 'الكل' : 'All'),
-                    _buildCategoryChip('laptops', isArabic ? 'حواسب ولابتوبات' : 'Laptops'),
-                    _buildCategoryChip('printers', isArabic ? 'طابعات وأحبار' : 'Printers'),
-                    _buildCategoryChip('stationery', isArabic ? 'قرطاسية ومكتبية' : 'Stationery'),
+                    for (final category in ProductCategories.all)
+                      _buildCategoryChip(
+                        category.key,
+                        isArabic ? category.labelAr : category.labelEn,
+                      ),
                   ],
                 ),
               ),
@@ -408,16 +378,34 @@ class _ProductCardTile extends StatelessWidget {
             Expanded(
               child: Stack(
                 children: [
-                  Container(
-                    width: double.infinity,
-                    decoration: BoxDecoration(
+                  ClipRRect(
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                    child: Container(
+                      width: double.infinity,
                       color: Colors.grey.shade100,
-                      borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-                    ),
-                    child: const Icon(
-                      Icons.inventory_2_outlined,
-                      size: 45,
-                      color: Colors.grey,
+                      child: product.imageUrl.trim().isEmpty
+                          ? const Icon(
+                              Icons.inventory_2_outlined,
+                              size: 45,
+                              color: Colors.grey,
+                            )
+                          : CachedNetworkImage(
+                              imageUrl: product.imageUrl,
+                              fit: BoxFit.cover,
+                              width: double.infinity,
+                              placeholder: (context, url) => const Center(
+                                child: SizedBox(
+                                  width: 24,
+                                  height: 24,
+                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                ),
+                              ),
+                              errorWidget: (context, url, error) => const Icon(
+                                Icons.broken_image_outlined,
+                                size: 45,
+                                color: Colors.grey,
+                              ),
+                            ),
                     ),
                   ),
                   if (isAdmin)

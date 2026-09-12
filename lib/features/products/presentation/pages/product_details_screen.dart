@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:taamol_tech/core/constants/app_colors.dart';
 import 'package:taamol_tech/features/products/data/models/product_model.dart';
@@ -93,12 +94,32 @@ class ProductDetailsScreen extends StatelessWidget {
                           ),
                         ],
                       ),
-                      child: Center(
-                        child: Icon(
-                          Icons.inventory_2_outlined,
-                          size: 110,
-                          color: Colors.grey.shade300,
-                        ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(20),
+                        child: product.imageUrl.trim().isEmpty
+                            ? Center(
+                                child: Icon(
+                                  Icons.inventory_2_outlined,
+                                  size: 110,
+                                  color: Colors.grey.shade300,
+                                ),
+                              )
+                            : CachedNetworkImage(
+                                imageUrl: product.imageUrl,
+                                fit: BoxFit.cover,
+                                width: double.infinity,
+                                height: 230,
+                                placeholder: (context, url) => const Center(
+                                  child: CircularProgressIndicator(),
+                                ),
+                                errorWidget: (context, url, error) => Center(
+                                  child: Icon(
+                                    Icons.broken_image_outlined,
+                                    size: 110,
+                                    color: Colors.grey.shade300,
+                                  ),
+                                ),
+                              ),
                       ),
                     ),
                     const SizedBox(height: 24),
@@ -201,26 +222,3 @@ class ProductDetailsScreen extends StatelessWidget {
     );
   }
 }
-// ```[cite: 1]
-
-// ---
-
-// ### 2️⃣ التعديل في `profile_screen.dart`
-// * تم إزالة **"إدارة طلبات العملاء"** أو أي ذكر لعروض أسعار الشركات B2B.
-// * الأدمن فقط سيحتاج خياري:
-//   1. **إضافة منتج جديد** (`add_product_screen.dart`).
-//   2. **إدارة وتعديل المنتجات** (`edit_product_screen.dart`).
-
-// ---
-
-// ### 3️⃣ الملفات المطلوبة الآن للتطبيق البسيط:
-
-// 1. **`lib/features/products/presentation/pages/home_screen.dart`**:
-//    * عرض كتالوج المنتجات مع زر تصفية وميزة البحث.
-//    * إظهار زر الإضافة FloatingActionButton للأدمن فقط لتنشيط إضافة المنتجات.
-// 2. **`lib/features/products/presentation/pages/product_details_screen.dart`**:
-//    * عرض بيانات المنتج وزر الشراء المباشر عبر **WhatsApp**.
-// 3. **`lib/features/admin/presentation/screens/add_edit_product_screen.dart`**:
-//    * شاشة واحدة مخصصة للأدمن لإدخال اسم المنتج، السعر، القسم، والصورة، إما للإضافة أو التعديل.
-
-// هل ترغب في أن نكتب كود شاشة **إضافة/تعديل المنتجات المخصصة للأدمن (`add_edit_product_screen.dart`)** الآن؟
