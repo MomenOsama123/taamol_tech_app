@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:taamol_tech/features/auth/data/auth_service.dart';
 import 'package:taamol_tech/features/products/data/models/product_model.dart';
 import 'package:taamol_tech/features/products/data/product_service.dart';
-import 'package:taamol_tech/features/products/presentation/pages/edit_product_screen.dart';
+import 'package:taamol_tech/features/products/presentation/pages/add_edit_product_screen.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
   const AdminDashboardScreen({super.key});
@@ -96,7 +96,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   Future<void> _addProduct() async {
     await Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => const EditProductScreen()),
+      MaterialPageRoute(builder: (_) => const AddEditProductScreen()),
     );
 
     if (!mounted) return;
@@ -107,7 +107,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   Future<void> _editProduct(ProductModel product) async {
     await Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => EditProductScreen(product: product)),
+      MaterialPageRoute(builder: (_) => AddEditProductScreen(product: product)),
     );
 
     if (!mounted) return;

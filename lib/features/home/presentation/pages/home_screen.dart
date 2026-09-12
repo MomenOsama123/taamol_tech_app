@@ -3,9 +3,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:taamol_tech/core/constants/app_colors.dart';
 import 'package:taamol_tech/core/constants/app_strings.dart';
 import 'package:taamol_tech/features/products/data/models/product_model.dart';
-import 'package:taamol_tech/features/products/presentation/pages/edit_product_screen.dart';
 import 'package:taamol_tech/features/products/presentation/pages/product_details_screen.dart';
 import 'package:taamol_tech/main.dart';
+import 'package:taamol_tech/features/products/presentation/pages/add_edit_product_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -95,10 +95,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _openEditor([ProductModel? product]) async {
     if (!_isAdmin) return;
-    final changed = await Navigator.push<bool>(
-      context,
-      MaterialPageRoute(builder: (_) => EditProductScreen(product: product)),
-    );
+   final changed = await Navigator.push<bool>(
+  context,
+  MaterialPageRoute(builder: (_) => AddEditProductScreen(product: product)),
+);
     if (changed == true && mounted) {
       setState(() => _productsFuture = _loadProducts());
     }

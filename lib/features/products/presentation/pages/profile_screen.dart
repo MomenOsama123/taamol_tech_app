@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:taamol_tech/core/constants/app_colors.dart';
-import 'package:taamol_tech/features/admin/screens/admin_dashboard_screen.dart';
+import 'package:taamol_tech/features/admin/pages/admin_dashboard_screen.dart';
 import 'package:taamol_tech/main.dart';
 
 class ProfileScreen extends StatefulWidget {
