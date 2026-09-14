@@ -5,11 +5,8 @@ import 'package:url_launcher/url_launcher.dart';
 class ContactUsScreen extends StatelessWidget {
   const ContactUsScreen({super.key});
 
-  // 🟢 رقم واتساب شركة تكامل تك المخصص للتواصل الدائم
-  final String companyWhatsAppNumber =
-      '201020931722'; // ضع الرقم بدون (+) أو (00)
+  final String companyWhatsAppNumber = '201020931722'; 
 
-  // دالة فتح الواتساب مباشرة لمحادثات الدعم والاستفسارات
   Future<void> _openWhatsApp(BuildContext context, bool isArabic) async {
     final String message = isArabic
         ? 'مرحباً فريق تكامل تك 👋\nأود الاستفسار عن الخدمات والمنتجات المتاحة.'
@@ -27,9 +24,7 @@ class ContactUsScreen extends StatelessWidget {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                isArabic
-                    ? 'تطبيق الواتساب غير مثبت على جهازك'
-                    : 'WhatsApp is not installed on your device',
+                isArabic ? 'تطبيق الواتساب غير مثبت على جهازك' : 'WhatsApp is not installed on your device',
               ),
             ),
           );
@@ -40,9 +35,7 @@ class ContactUsScreen extends StatelessWidget {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              isArabic
-                  ? 'حدث خطأ أثناء الاتصال بالواتساب'
-                  : 'Error opening WhatsApp',
+              isArabic ? 'حدث خطأ أثناء الاتصال بالواتساب' : 'Error opening WhatsApp',
             ),
           ),
         );
@@ -97,17 +90,11 @@ class ContactUsScreen extends StatelessWidget {
                   const CircleAvatar(
                     radius: 36,
                     backgroundColor: Colors.white24,
-                    child: Icon(
-                      Icons.support_agent,
-                      size: 44,
-                      color: Colors.white,
-                    ),
+                    child: Icon(Icons.support_agent, size: 44, color: Colors.white),
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    isArabic
-                        ? 'خدمة العملاء والمبيعات'
-                        : 'Customer Service & Sales',
+                    isArabic ? 'خدمة العملاء والمبيعات' : 'Customer Service & Sales',
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 18,
@@ -116,24 +103,28 @@ class ContactUsScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 6),
-
+                  Text(
+                    isArabic
+                        ? 'فريقنا متواجد للرد على جميع استفساراتك وطلباتك عبر الواتساب'
+                        : 'Our team is available for all inquiries & orders via WhatsApp',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: Colors.white70,
+                      fontSize: 12,
+                      fontFamily: 'Tajawal',
+                    ),
+                  ),
                   const SizedBox(height: 20),
 
-                  // 🟢 زر التحويل المباشر للواتساب
+                  // زر التحويل المباشر للواتساب
                   SizedBox(
                     width: double.infinity,
                     height: 50,
                     child: ElevatedButton.icon(
                       onPressed: () => _openWhatsApp(context, isArabic),
-                      icon: const Icon(
-                        Icons.chat,
-                        color: Colors.white,
-                        size: 24,
-                      ),
+                      icon: const Icon(Icons.chat, color: Colors.white, size: 24),
                       label: Text(
-                        isArabic
-                            ? 'محادثة عبر WhatsApp الآن'
-                            : 'Chat via WhatsApp Now',
+                        isArabic ? 'محادثة عبر WhatsApp الآن' : 'Chat via WhatsApp Now',
                         style: const TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.bold,
@@ -142,9 +133,7 @@ class ContactUsScreen extends StatelessWidget {
                         ),
                       ),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(
-                          0xFF25D366,
-                        ), // اللون الرسمي للواتساب
+                        backgroundColor: const Color(0xFF25D366),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -157,14 +146,12 @@ class ContactUsScreen extends StatelessWidget {
             ),
             const SizedBox(height: 28),
 
-            // 2. كروت المعلومات المباشرة (رقم الهاتف، الساعات، العنوان)
+            // 2. كروت المعلومات المباشرة
             _buildContactInfoCard(
               context,
               icon: Icons.phone_android,
               iconColor: AppColors.primaryCyan,
-              title: isArabic
-                  ? 'رقم الواتساب / المبيعات'
-                  : 'WhatsApp / Sales Number',
+              title: isArabic ? 'رقم الواتساب / المبيعات' : 'WhatsApp / Sales Number',
               subtitle: '+$companyWhatsAppNumber',
               onTap: () => _openWhatsApp(context, isArabic),
             ),
@@ -175,18 +162,14 @@ class ContactUsScreen extends StatelessWidget {
               icon: Icons.access_time,
               iconColor: AppColors.deepPurple,
               title: isArabic ? 'ساعات العمل' : 'Working Hours',
-              subtitle: isArabic
-                  ? 'الأحد - الخميس: 8:00 ص - 6:00 م'
-                  : 'Sun - Thu: 8:00 AM - 6:00 PM',
+              subtitle: isArabic ? 'الأحد - الخميس: 8:00 ص - 6:00 م' : 'Sun - Thu: 8:00 AM - 6:00 PM',
             ),
-            const SizedBox(height: 12),
           ],
         ),
       ),
     );
   }
 
-  // ودجت بناء بطاقات المعلومات
   Widget _buildContactInfoCard(
     BuildContext context, {
     required IconData icon,
