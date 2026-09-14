@@ -1,13 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:cached_network_image/cached_network_image.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:taamol_tech/core/constants/app_colors.dart';
 import 'package:taamol_tech/core/constants/app_strings.dart';
-import 'package:taamol_tech/core/constants/product_categories.dart';
-import 'package:taamol_tech/features/auth/data/auth_service.dart';
 import 'package:taamol_tech/features/products/data/models/product_model.dart';
-import 'package:taamol_tech/features/products/data/product_service.dart';
+import 'package:taamol_tech/features/admin/screens/add_edit_product_screen.dart'; // تم تصحيح المسار
 import 'package:taamol_tech/features/products/presentation/pages/product_details_screen.dart';
-import 'package:taamol_tech/features/products/presentation/pages/add_edit_product_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -18,9 +15,9 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   late Future<List<ProductModel>> _productsFuture;
+  final _supabase = Supabase.instance.client;
   bool _isAdmin = false;
 
-  // حالة قسم الفلترة وشريط البحث
   String selectedCategory = 'all';
   String searchQuery = '';
   final TextEditingController _searchController = TextEditingController();
@@ -38,16 +35,50 @@ class _HomeScreenState extends State<HomeScreen> {
     super.dispose();
   }
 
-  // 🔹 فحص صلاحية الأدمن - نفس الدالة المستخدمة في باقي التطبيق (auth_service)
   Future<void> _loadAdminStatus() async {
-    final isAdmin = await isCurrentUserAdmin();
-    if (mounted) setState(() => _isAdmin = isAdmin);
+    try {
+      final user = _supabase.auth.currentUser;
+      if (user == null) {
+        if (mounted) setState(() => _isAdmin = false);
+        return;
+      }
+
+      final response = await _supabase
+          .from('profiles')
+          .select('is_admin')
+          .eq('id', user.id)
+          .maybeSingle();
+
+      if (response != null && mounted) {
+        final dynamic rawIsAdmin = response['is_admin'];
+        final bool isAdmin =
+            rawIsAdmin == true ||
+            rawIsAdmin.toString().toLowerCase() == 'true' ||
+            rawIsAdmin == 1;
+
+        setState(() {
+          _isAdmin = isAdmin;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading admin status: $e');
+    }
   }
 
-  // 🔹 جلب المنتجات - نفس الدالة المستخدمة في لوحة تحكم الأدمن (product_service)
   Future<List<ProductModel>> _loadProducts() async {
-    final products = await fetchProducts();
-    return products.where((product) => product.isAvailable).toList();
+    try {
+      final response = await _supabase.from('products').select('*');
+      final List<dynamic> dataList = response as List<dynamic>;
+
+      return dataList.map((item) {
+        final map = Map<String, dynamic>.from(item as Map);
+        return ProductModel.fromMap(map);
+      }).toList();
+    } catch (error, stackTrace) {
+      debugPrint('Supabase Fetch Error: $error');
+      debugPrint('StackTrace: $stackTrace');
+      rethrow;
+    }
   }
 
   Future<void> _refreshProducts() async {
@@ -63,10 +94,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _openEditor([ProductModel? product]) async {
     if (!_isAdmin) return;
-   final changed = await Navigator.push<bool>(
-  context,
-  MaterialPageRoute(builder: (_) => AddEditProductScreen(product: product)),
-);
+    // تم تصحيح اسم الكلاس إلى AddEditProductScreen
+    final changed = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(builder: (_) => AddEditProductScreen(product: product)),
+    );
     if (changed == true && mounted) {
       setState(() => _productsFuture = _loadProducts());
     }
@@ -77,19 +109,23 @@ class _HomeScreenState extends State<HomeScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('حذف المنتج'),
+        title: const Text(
+          'حذف المنتج',
+          style: TextStyle(fontFamily: 'Tajawal'),
+        ),
         content: Text(
-          'هل أنت تأكد من حذف ${product.nameAr.isEmpty ? product.nameEn : product.nameAr}؟',
+          'هل أنت متأكد من حذف ${product.nameAr.isEmpty ? product.nameEn : product.nameAr}؟',
+          style: const TextStyle(fontFamily: 'Tajawal'),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('إلغاء'),
+            child: const Text('إلغاء', style: TextStyle(fontFamily: 'Tajawal')),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(dialogContext, true),
             style: FilledButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('حذف'),
+            child: const Text('حذف', style: TextStyle(fontFamily: 'Tajawal')),
           ),
         ],
       ),
@@ -97,12 +133,12 @@ class _HomeScreenState extends State<HomeScreen> {
     if (confirmed != true) return;
 
     try {
-      await deleteProduct(product.id);
+      await _supabase.from('products').delete().eq('id', product.id);
       if (mounted) setState(() => _productsFuture = _loadProducts());
-    } catch (error) {
+    } on PostgrestException catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('$error'), backgroundColor: Colors.red),
+        SnackBar(content: Text(error.message), backgroundColor: Colors.red),
       );
     }
   }
@@ -138,12 +174,6 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ],
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.shopping_bag_outlined, color: AppColors.deepPurple),
-            onPressed: () {},
-          ),
-        ],
       ),
       floatingActionButton: _isAdmin
           ? FloatingActionButton.extended(
@@ -168,7 +198,6 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 1. شريط البحث
               TextField(
                 controller: _searchController,
                 onChanged: (value) {
@@ -177,9 +206,18 @@ class _HomeScreenState extends State<HomeScreen> {
                   });
                 },
                 decoration: InputDecoration(
-                  hintText: isArabic ? 'ابحث عن أجهزة، طابعات، أو مستلزمات...' : 'Search laptops, printers...',
-                  hintStyle: TextStyle(fontSize: 12, color: Colors.grey.shade500, fontFamily: 'Tajawal'),
-                  prefixIcon: const Icon(Icons.search, color: AppColors.primaryCyan),
+                  hintText: isArabic
+                      ? 'ابحث عن أجهزة، طابعات، أو مستلزمات...'
+                      : 'Search laptops, printers...',
+                  hintStyle: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey.shade500,
+                    fontFamily: 'Tajawal',
+                  ),
+                  prefixIcon: const Icon(
+                    Icons.search,
+                    color: AppColors.primaryCyan,
+                  ),
                   suffixIcon: searchQuery.isNotEmpty
                       ? IconButton(
                           icon: const Icon(Icons.clear, size: 18),
@@ -199,31 +237,38 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-
-              // 2. أزرار تصفية الأقسام
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: Row(
                   children: [
                     _buildCategoryChip('all', isArabic ? 'الكل' : 'All'),
-                    for (final category in ProductCategories.all)
-                      _buildCategoryChip(
-                        category.key,
-                        isArabic ? category.labelAr : category.labelEn,
-                      ),
+                    _buildCategoryChip(
+                      'laptops',
+                      isArabic ? 'حواسب ولابتوبات' : 'Laptops',
+                    ),
+                    _buildCategoryChip(
+                      'printers',
+                      isArabic ? 'طابعات وأحبار' : 'Printers',
+                    ),
+                    _buildCategoryChip(
+                      'stationery',
+                      isArabic ? 'قرطاسية ومكتبية' : 'Stationery',
+                    ),
                   ],
                 ),
               ),
               const SizedBox(height: 20),
-
-              // 3. عرض شبكة المنتجات من Supabase
               FutureBuilder<List<ProductModel>>(
                 future: _productsFuture,
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return const SizedBox(
                       height: 200,
-                      child: Center(child: CircularProgressIndicator()),
+                      child: Center(
+                        child: CircularProgressIndicator(
+                          color: AppColors.primaryCyan,
+                        ),
+                      ),
                     );
                   }
 
@@ -234,15 +279,23 @@ class _HomeScreenState extends State<HomeScreen> {
                         child: Column(
                           children: [
                             Text(
-                              AppStrings.tr(context, AppStrings.productsLoadError),
+                              AppStrings.tr(
+                                context,
+                                AppStrings.productsLoadError,
+                              ),
                               textAlign: TextAlign.center,
-                              style: const TextStyle(fontSize: 14, fontFamily: 'Tajawal'),
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontFamily: 'Tajawal',
+                              ),
                             ),
                             const SizedBox(height: 12),
                             OutlinedButton.icon(
                               onPressed: _refreshProducts,
                               icon: const Icon(Icons.refresh),
-                              label: Text(AppStrings.tr(context, AppStrings.retry)),
+                              label: Text(
+                                AppStrings.tr(context, AppStrings.retry),
+                              ),
                             ),
                           ],
                         ),
@@ -251,9 +304,14 @@ class _HomeScreenState extends State<HomeScreen> {
                   }
 
                   final rawProducts = snapshot.data ?? [];
+
                   final filteredProducts = rawProducts.where((p) {
-                    final matchesCategory = selectedCategory == 'all' || p.category == selectedCategory;
-                    final matchesSearch = searchQuery.isEmpty ||
+                    if (!_isAdmin && p.isAvailable == false) return false;
+                    final matchesCategory =
+                        selectedCategory == 'all' ||
+                        p.category == selectedCategory;
+                    final matchesSearch =
+                        searchQuery.isEmpty ||
                         p.nameAr.toLowerCase().contains(searchQuery) ||
                         p.nameEn.toLowerCase().contains(searchQuery);
                     return matchesCategory && matchesSearch;
@@ -278,12 +336,13 @@ class _HomeScreenState extends State<HomeScreen> {
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
                     itemCount: filteredProducts.length,
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      childAspectRatio: 0.72,
-                      crossAxisSpacing: 12,
-                      mainAxisSpacing: 12,
-                    ),
+                    gridDelegate:
+                        const SliverGridDelegateWithMaxCrossAxisExtent(
+                          maxCrossAxisExtent: 220,
+                          childAspectRatio: 0.70,
+                          crossAxisSpacing: 16,
+                          mainAxisSpacing: 16,
+                        ),
                     itemBuilder: (context, index) {
                       final product = filteredProducts[index];
                       return _ProductCardTile(
@@ -294,7 +353,8 @@ class _HomeScreenState extends State<HomeScreen> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) => ProductDetailsScreen(product: product),
+                              builder: (_) =>
+                                  ProductDetailsScreen(product: product),
                             ),
                           );
                         },
@@ -329,6 +389,7 @@ class _HomeScreenState extends State<HomeScreen> {
         selected: isSelected,
         selectedColor: AppColors.primaryCyan,
         backgroundColor: AppColors.cardWhite,
+        showCheckmark: false,
         onSelected: (bool selected) {
           setState(() {
             selectedCategory = categoryKey;
@@ -366,7 +427,7 @@ class _ProductCardTile extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withAlpha(10),
+              color: Colors.black.withValues(alpha: .05),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -378,36 +439,63 @@ class _ProductCardTile extends StatelessWidget {
             Expanded(
               child: Stack(
                 children: [
-                  ClipRRect(
-                    borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-                    child: Container(
-                      width: double.infinity,
+                  Container(
+                    width: double.infinity,
+                    decoration: BoxDecoration(
                       color: Colors.grey.shade100,
-                      child: product.imageUrl.trim().isEmpty
-                          ? const Icon(
+                      borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(16),
+                      ),
+                    ),
+                    // تم إزالة التحذيرات: الاعتماد على isNotEmpty مباشرة
+                    child: ClipRRect(
+                      borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(16),
+                      ),
+                      child: product.imageUrl.isNotEmpty
+                          ? Image.network(
+                              product.imageUrl,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) =>
+                                  const Icon(
+                                    Icons.broken_image_outlined,
+                                    size: 45,
+                                    color: Colors.grey,
+                                  ),
+                            )
+                          : const Icon(
                               Icons.inventory_2_outlined,
                               size: 45,
                               color: Colors.grey,
-                            )
-                          : CachedNetworkImage(
-                              imageUrl: product.imageUrl,
-                              fit: BoxFit.cover,
-                              width: double.infinity,
-                              placeholder: (context, url) => const Center(
-                                child: SizedBox(
-                                  width: 24,
-                                  height: 24,
-                                  child: CircularProgressIndicator(strokeWidth: 2),
-                                ),
-                              ),
-                              errorWidget: (context, url, error) => const Icon(
-                                Icons.broken_image_outlined,
-                                size: 45,
-                                color: Colors.grey,
-                              ),
                             ),
                     ),
                   ),
+
+                  if (isAdmin && !product.isAvailable)
+                    Positioned(
+                      bottom: 8,
+                      right: 8,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.red.withValues(alpha: .9),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Text(
+                          'غير متوفر',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            fontFamily: 'Tajawal',
+                          ),
+                        ),
+                      ),
+                    ),
+
                   if (isAdmin)
                     Positioned(
                       top: 4,
@@ -417,23 +505,43 @@ class _ProductCardTile extends StatelessWidget {
                         icon: const CircleAvatar(
                           radius: 14,
                           backgroundColor: Colors.white,
-                          child: Icon(Icons.more_vert, size: 16, color: AppColors.deepPurple),
+                          child: Icon(
+                            Icons.more_vert,
+                            size: 16,
+                            color: AppColors.deepPurple,
+                          ),
                         ),
                         onSelected: (value) {
                           if (value == 'edit') onEdit();
                           if (value == 'delete') onDelete();
                         },
                         itemBuilder: (_) => const [
-                          PopupMenuItem(value: 'edit', child: Text('تعديل')),
-                          PopupMenuItem(value: 'delete', child: Text('حذف', style: TextStyle(color: Colors.red))),
+                          PopupMenuItem(
+                            value: 'edit',
+                            child: Text(
+                              'تعديل',
+                              style: TextStyle(fontFamily: 'Tajawal'),
+                            ),
+                          ),
+                          PopupMenuItem(
+                            value: 'delete',
+                            child: Text(
+                              'حذف',
+                              style: TextStyle(
+                                color: Colors.red,
+                                fontFamily: 'Tajawal',
+                              ),
+                            ),
+                          ),
                         ],
                       ),
                     ),
                 ],
               ),
             ),
+
             Padding(
-              padding: const EdgeInsets.all(10.0),
+              padding: const EdgeInsets.all(12.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -442,7 +550,7 @@ class _ProductCardTile extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
-                      fontSize: 13,
+                      fontSize: 14,
                       fontWeight: FontWeight.bold,
                       color: AppColors.deepPurple,
                       fontFamily: 'Tajawal',
@@ -459,32 +567,30 @@ class _ProductCardTile extends StatelessWidget {
                       fontFamily: 'Tajawal',
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 12),
+
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
                         '${product.price.toStringAsFixed(0)} ر.س',
                         style: const TextStyle(
-                          fontSize: 13,
+                          fontSize: 14,
                           fontWeight: FontWeight.bold,
                           color: AppColors.primaryCyan,
                           fontFamily: 'Tajawal',
                         ),
                       ),
-                      InkWell(
-                        onTap: () {},
-                        child: Container(
-                          padding: const EdgeInsets.all(6),
-                          decoration: BoxDecoration(
-                            color: AppColors.primaryCyan.withAlpha(25),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: const Icon(
-                            Icons.add_shopping_cart,
-                            size: 16,
-                            color: AppColors.primaryCyan,
-                          ),
+                      Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryCyan.withValues(alpha: .1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(
+                          Icons.arrow_forward_ios,
+                          size: 14,
+                          color: AppColors.primaryCyan,
                         ),
                       ),
                     ],
