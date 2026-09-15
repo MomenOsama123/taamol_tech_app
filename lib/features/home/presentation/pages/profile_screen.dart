@@ -28,6 +28,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _loadUserData() async {
     try {
       final user = _supabase.auth.currentUser;
+      // إذا لم يكن هناك مستخدم (وضع الزائر Guest) ننهي التحميل فوراً
       if (user == null) {
         if (mounted) setState(() => _isLoading = false);
         return;
@@ -73,7 +74,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget build(BuildContext context) {
     final bool isArabic = Localizations.localeOf(context).languageCode == 'ar';
     final user = _supabase.auth.currentUser;
-    final bool isGuest = user == null; // 🌟 تحديد حالة الزائر
+    final bool isGuest = user == null; // 🌟 فحص حالة الزائر
 
     if (_isLoading) {
       return const Scaffold(
@@ -203,7 +204,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                   ],
 
-                  // 🌟 زر تسجيل الدخول للزائر داخل الكارت
+                  // 🌟 الواجهة الخاصة بالزائر وتوجيهه لتسجيل الدخول
                   if (isGuest) ...[
                     const SizedBox(height: 12),
                     Text(
@@ -360,7 +361,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             const SizedBox(height: 28),
 
-            // 4. زر تسجيل الخروج (يختفي في حالة الزائر) 🌟
+            // 4. زر تسجيل الخروج (يظهر فقط للمستخدم المسجل وليس الزائر)
             if (!isGuest)
               SizedBox(
                 width: double.infinity,

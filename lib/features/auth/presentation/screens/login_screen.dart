@@ -86,7 +86,7 @@ class _LoginScreenState extends State<LoginScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // اللوجو أو العنوان
+                  // 1. عنوان الشاشة
                   const Text(
                     'تسجيل الدخول',
                     style: TextStyle(
@@ -98,13 +98,15 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 30),
 
-                  // حقل البريد الإلكتروني
+                  // 2. حقل البريد الإلكتروني
                   TextFormField(
                     controller: _emailController,
                     keyboardType: TextInputType.emailAddress,
                     decoration: InputDecoration(
                       labelText: isArabic ? 'البريد الإلكتروني' : 'Email',
-                      prefixIcon: const Icon(Icons.email_outlined),
+                      prefixIcon: const Icon(Icons.email_outlined, color: AppColors.primaryCyan),
+                      filled: true,
+                      fillColor: Colors.white,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -114,13 +116,15 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 16),
 
-                  // حقل كلمة المرور
+                  // 3. حقل كلمة المرور
                   TextFormField(
                     controller: _passwordController,
                     obscureText: true,
                     decoration: InputDecoration(
                       labelText: isArabic ? 'كلمة المرور' : 'Password',
-                      prefixIcon: const Icon(Icons.lock_outline),
+                      prefixIcon: const Icon(Icons.lock_outline, color: AppColors.primaryCyan),
+                      filled: true,
+                      fillColor: Colors.white,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -130,7 +134,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 10),
 
-                  // زر نسيت كلمة المرور
+                  // 4. زر نسيت كلمة المرور
                   Align(
                     alignment: Alignment.centerRight,
                     child: TextButton(
@@ -154,7 +158,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 20),
 
-                  // زر تسجيل الدخول
+                  // 5. زر تسجيل الدخول الرئيسي
                   SizedBox(
                     width: double.infinity,
                     height: 50,
@@ -181,7 +185,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 16),
 
-                  // زر المتابعة كزائر (Guest Option)
+                  // 6. زر المتابعة كزائر (توجيه مباشر دون مسح session)
                   TextButton(
                     onPressed: () {
                       Navigator.pushReplacement(
@@ -190,10 +194,11 @@ class _LoginScreenState extends State<LoginScreen> {
                       );
                     },
                     child: Text(
-                      isArabic ? 'المتابعة كزائر (Continue as Guest)' : 'Continue as Guest',
+                      isArabic ? 'المتابعة كزائر' : 'Continue as Guest',
                       style: const TextStyle(
                         color: Colors.grey,
                         fontFamily: 'Tajawal',
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ),
