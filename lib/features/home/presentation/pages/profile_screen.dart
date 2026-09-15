@@ -13,78 +13,74 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  final User? currentUser = Supabase.instance.client.auth.currentUser;
-
-  String userName = "";
-  String userId = "";
-  String userRole = "User";
-  String userEmail = "";
-  bool isLoading = true;
+  final _supabase = Supabase.instance.client;
+  bool _isLoading = true;
+  bool _isAdmin = false;
+  String _fullName = '';
+  String _email = '';
 
   @override
   void initState() {
     super.initState();
-    if (currentUser != null) {
-      _fetchUserProfile();
-    } else {
-      setState(() => isLoading = false);
-    }
+    _loadUserData();
   }
 
-  Future<void> _fetchUserProfile() async {
+  Future<void> _loadUserData() async {
     try {
-      final response = await Supabase.instance.client
+      final user = _supabase.auth.currentUser;
+      if (user == null) {
+        if (mounted) setState(() => _isLoading = false);
+        return;
+      }
+
+      _email = user.email ?? '';
+
+      final response = await _supabase
           .from('profiles')
-          .select('full_name, email, is_admin')
-          .eq('id', currentUser!.id)
+          .select('full_name, is_admin')
+          .eq('id', user.id)
           .maybeSingle();
 
       if (response != null && mounted) {
-        final dynamic rawIsAdmin = response['is_admin'];
-        final bool isAdmin =
-            rawIsAdmin == true ||
-            rawIsAdmin.toString().toLowerCase() == 'true' ||
-            rawIsAdmin == 1;
-
+        final rawIsAdmin = response['is_admin'];
         setState(() {
-          userName =
-              response['full_name'] ??
-              currentUser?.email?.split('@').first ??
-              'مستخدم';
-          userEmail = response['email'] ?? currentUser?.email ?? '';
-          userId = currentUser!.id.substring(0, 8).toUpperCase();
-          userRole = isAdmin ? 'Admin' : 'User';
-          isLoading = false;
+          _fullName = response['full_name'] ?? _email.split('@').first;
+          _isAdmin =
+              rawIsAdmin == true ||
+              rawIsAdmin.toString().toLowerCase() == 'true' ||
+              rawIsAdmin == 1;
         });
-      } else {
-        _setFallbackUserData();
       }
     } catch (e) {
-      debugPrint('Error fetching user profile: $e');
-      if (mounted) {
-        _setFallbackUserData();
-      }
+      debugPrint('Error loading profile: $e');
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
-  void _setFallbackUserData() {
-    setState(() {
-      userName =
-          currentUser?.userMetadata?['full_name'] ??
-          currentUser?.email?.split('@').first ??
-          'مستخدم';
-      userEmail = currentUser?.email ?? '';
-      userId = currentUser?.id.substring(0, 8).toUpperCase() ?? '';
-      userRole = 'User';
-      isLoading = false;
-    });
+  Future<void> _signOut() async {
+    await _supabase.auth.signOut();
+    if (mounted) {
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
+        (route) => false,
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final bool isArabic = Localizations.localeOf(context).languageCode == 'ar';
-    final bool isGuest = currentUser == null;
-    final bool isAdmin = userRole.toLowerCase() == 'admin';
+    final user = _supabase.auth.currentUser;
+
+    if (_isLoading) {
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(color: AppColors.primaryCyan),
+        ),
+      );
+    }
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -92,389 +88,248 @@ class _ProfileScreenState extends State<ProfileScreen> {
         backgroundColor: AppColors.cardWhite,
         elevation: 0,
         title: Text(
-          isArabic ? 'الملف الشخصي' : 'User Profile',
+          isArabic ? 'الملف الشخصي' : 'My Profile',
           style: const TextStyle(
             color: AppColors.deepPurple,
-            fontFamily: 'Tajawal',
             fontWeight: FontWeight.bold,
+            fontFamily: 'Tajawal',
           ),
         ),
         centerTitle: true,
       ),
-      body: isLoading
-          ? const Center(
-              child: CircularProgressIndicator(color: AppColors.deepPurple),
-            )
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(20.0),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(20.0),
+        child: Column(
+          children: [
+            // 1. كارت معلومات الحساب
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: AppColors.cardWhite,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.04),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
               child: Column(
                 children: [
-                  isGuest ? _buildGuestHeader(isArabic) : _buildUserHeader(),
-                  const SizedBox(height: 24),
-
-                  if (!isGuest && isAdmin) ...[
-                    _buildSectionTitle(
-                      isArabic
-                          ? 'أدوات الإدارة (Admin Panel)'
-                          : 'Admin Control Panel',
-                    ),
-                    const SizedBox(height: 12),
-                    _buildAdminSection(isArabic),
-                    const SizedBox(height: 24),
-                  ],
-
-                  _buildSectionTitle(
-                    isArabic
-                        ? 'الإعدادات والتفضيلات'
-                        : 'Settings & Preferences',
-                  ),
-                  const SizedBox(height: 12),
-
-                  Container(
-                    decoration: BoxDecoration(
-                      color: AppColors.cardWhite,
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Column(
-                      children: [
-                        ListTile(
-                          leading: const Icon(
-                            Icons.settings_outlined,
-                            color: AppColors.primaryCyan,
-                          ),
-                          title: Text(
-                            isArabic ? 'الإعدادات' : 'Settings',
-                            style: const TextStyle(
-                              fontFamily: 'Tajawal',
-                              fontWeight: FontWeight.bold,
-                              fontSize: 14,
+                  Stack(
+                    children: [
+                      CircleAvatar(
+                        radius: 40,
+                        backgroundColor: AppColors.primaryCyan.withValues(
+                          alpha: 0.2,
+                        ),
+                        child: const Icon(
+                          Icons.person,
+                          size: 50,
+                          color: AppColors.deepPurple,
+                        ),
+                      ),
+                      if (_isAdmin)
+                        Positioned(
+                          bottom: 0,
+                          right: 0,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
                             ),
-                          ),
-                          trailing: const Icon(
-                            Icons.arrow_forward_ios,
-                            size: 14,
-                            color: Colors.grey,
-                          ),
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => const SettingsScreen(),
+                            decoration: BoxDecoration(
+                              color: AppColors.deepPurple,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Text(
+                              'Admin',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
                               ),
-                            );
-                          },
+                            ),
+                          ),
                         ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-
-                  _buildSectionTitle(
-                    isArabic ? 'الدعم والمساعدة' : 'Support & Help',
+                    ],
                   ),
                   const SizedBox(height: 12),
-
-                  Container(
-                    decoration: BoxDecoration(
-                      color: AppColors.cardWhite,
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: ListTile(
-                      leading: const Icon(
-                        Icons.support_agent,
-                        color: AppColors.primaryGreen,
-                      ),
-                      title: Text(
-                        isArabic ? 'التواصل مع الدعم الفني' : 'Contact Support',
-                        style: const TextStyle(
-                          fontFamily: 'Tajawal',
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
-                        ),
-                      ),
-                      trailing: const Icon(
-                        Icons.arrow_forward_ios,
-                        size: 14,
-                        color: Colors.grey,
-                      ),
-                      onTap: () {},
+                  Text(
+                    _fullName.isEmpty ? 'مستخدم' : _fullName,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.deepPurple,
+                      fontFamily: 'Tajawal',
                     ),
                   ),
-                  const SizedBox(height: 32),
-
-                  if (!isGuest)
-                    SizedBox(
-                      width: double.infinity,
-                      height: 50,
-                      child: OutlinedButton.icon(
-                        onPressed: () async {
-                          // 1. تنفيذ عملية تسجيل الخروج غير المتزامنة
-                          await Supabase.instance.client.auth.signOut();
-
-                          // 2. التحقق من أن الودجت ما زالت نشطة (موجودة على الشاشة) قبل استخدام الـ context
-                          if (!mounted) return;
-
-                          // 3. التنقل بأمان تام
-                          Navigator.pushAndRemoveUntil(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const LoginScreen(),
-                            ),
-                            (route) => false,
-                          );
-                        },
-                        icon: const Icon(Icons.logout, color: Colors.redAccent),
-                        label: Text(
-                          isArabic ? 'تسجيل الخروج' : 'Log Out',
-                          style: const TextStyle(
-                            color: Colors.redAccent,
-                            fontFamily: 'Tajawal',
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        style: OutlinedButton.styleFrom(
-                          side: const BorderSide(color: Colors.redAccent),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
+                  const SizedBox(height: 4),
+                  Text(
+                    _email,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey.shade600,
+                      fontFamily: 'Tajawal',
+                    ),
+                  ),
+                  if (user != null) ...[
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade100,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        'ID: ${user.id.substring(0, 8).toUpperCase()}',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Colors.grey.shade700,
+                          fontFamily: 'Tajawal',
                         ),
                       ),
                     ),
+                  ],
                 ],
               ),
             ),
-    );
-  }
+            const SizedBox(height: 20),
 
-  Widget _buildAdminSection(bool isArabic) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.cardWhite,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: AppColors.deepPurple.withValues(alpha: 0.3),
-          width: 1.5,
-        ),
-      ),
-      child: Column(
-        children: [
-          ListTile(
-            leading: const Icon(
-              Icons.add_shopping_cart,
-              color: AppColors.deepPurple,
-            ),
-            title: Text(
-              isArabic ? 'إضافة منتج جديد' : 'Add New Product',
-              style: const TextStyle(
-                fontFamily: 'Tajawal',
-                fontWeight: FontWeight.bold,
-                fontSize: 14,
-              ),
-            ),
-            trailing: const Icon(
-              Icons.arrow_forward_ios,
-              size: 14,
-              color: Colors.grey,
-            ),
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const AddEditProductScreen()),
-              );
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildGuestHeader(bool isArabic) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppColors.cardWhite,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 15,
-            offset: const Offset(0, 5),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          CircleAvatar(
-            radius: 40,
-            backgroundColor: Colors.grey.shade200,
-            child: const Icon(
-              Icons.person_outline_rounded,
-              size: 45,
-              color: Colors.grey,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            isArabic ? 'مرحباً بك يا زائرنا العزيز 👋' : 'Welcome Guest 👋',
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: AppColors.deepPurple,
-              fontFamily: 'Tajawal',
-            ),
-          ),
-          const SizedBox(height: 20),
-          SizedBox(
-            width: double.infinity,
-            height: 46,
-            child: ElevatedButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const LoginScreen()),
-                );
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primaryCyan,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+            // 2. أدوات الإدارة (تظهر للأدمن فقط)
+            if (_isAdmin) ...[
+              Align(
+                alignment: isArabic
+                    ? Alignment.centerRight
+                    : Alignment.centerLeft,
+                child: Text(
+                  isArabic ? 'أدوات الإدارة (Admin Panel)' : 'Admin Tools',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey,
+                    fontFamily: 'Tajawal',
+                  ),
                 ),
-                elevation: 0,
               ),
+              const SizedBox(height: 8),
+              Container(
+                decoration: BoxDecoration(
+                  color: AppColors.cardWhite,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: AppColors.deepPurple.withValues(alpha: 0.2),
+                  ),
+                ),
+                child: ListTile(
+                  leading: const Icon(
+                    Icons.add_shopping_cart,
+                    color: AppColors.deepPurple,
+                  ),
+                  title: Text(
+                    isArabic ? 'إضافة منتج جديد' : 'Add New Product',
+                    style: const TextStyle(
+                      fontFamily: 'Tajawal',
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
+                  ),
+                  trailing: const Icon(
+                    Icons.arrow_forward_ios,
+                    size: 14,
+                    color: Colors.grey,
+                  ),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const AddEditProductScreen(),
+                      ),
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 20),
+            ],
+
+            // 3. الإعدادات والتفضيلات
+            Align(
+              alignment: isArabic
+                  ? Alignment.centerRight
+                  : Alignment.centerLeft,
               child: Text(
-                isArabic ? 'تسجيل الدخول / حساب جديد' : 'Log In / Sign Up',
+                isArabic ? 'الإعدادات والتفضيلات' : 'Settings',
                 style: const TextStyle(
-                  fontSize: 15,
+                  fontSize: 12,
                   fontWeight: FontWeight.bold,
-                  color: Colors.white,
+                  color: Colors.grey,
                   fontFamily: 'Tajawal',
                 ),
               ),
             ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildUserHeader() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppColors.cardWhite,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 15,
-            offset: const Offset(0, 5),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Stack(
-            alignment: Alignment.bottomRight,
-            children: [
-              CircleAvatar(
-                radius: 45,
-                backgroundColor: AppColors.primaryCyan.withValues(alpha: 0.15),
-                child: const Icon(
-                  Icons.person,
-                  size: 50,
-                  color: AppColors.deepPurple,
-                ),
+            const SizedBox(height: 8),
+            Container(
+              decoration: BoxDecoration(
+                color: AppColors.cardWhite,
+                borderRadius: BorderRadius.circular(16),
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: _getRoleColor(userRole),
-                  borderRadius: BorderRadius.circular(12),
+              child: ListTile(
+                leading: const Icon(
+                  Icons.settings_outlined,
+                  color: AppColors.primaryCyan,
                 ),
-                child: Text(
-                  userRole,
+                title: Text(
+                  isArabic ? 'الإعدادات' : 'Settings',
                   style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 10,
+                    fontFamily: 'Tajawal',
                     fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                ),
+                trailing: const Icon(
+                  Icons.arrow_forward_ios,
+                  size: 14,
+                  color: Colors.grey,
+                ),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const SettingsScreen()),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 28),
+
+            // 4. زر تسجيل الخروج
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: OutlinedButton.icon(
+                onPressed: _signOut,
+                icon: const Icon(Icons.logout, color: Colors.red),
+                label: Text(
+                  isArabic ? 'تسجيل الخروج' : 'Log Out',
+                  style: const TextStyle(
+                    color: Colors.red,
+                    fontWeight: FontWeight.bold,
+                    fontFamily: 'Tajawal',
+                  ),
+                ),
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: Colors.red),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
                   ),
                 ),
               ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Text(
-            userName,
-            style: const TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: AppColors.deepPurple,
-              fontFamily: 'Tajawal',
             ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            userEmail,
-            style: TextStyle(
-              fontSize: 13,
-              color: Colors.grey.shade600,
-              fontFamily: 'Tajawal',
-            ),
-          ),
-          const SizedBox(height: 12),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: AppColors.background,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.badge_outlined,
-                  size: 16,
-                  color: Colors.grey.shade600,
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  'ID: $userId',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.deepPurple,
-                    letterSpacing: 1,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Color _getRoleColor(String role) {
-    switch (role.toLowerCase()) {
-      case 'admin':
-        return AppColors.deepPurple;
-      default:
-        return AppColors.primaryCyan;
-    }
-  }
-
-  Widget _buildSectionTitle(String title) {
-    return Align(
-      alignment: Alignment.centerRight,
-      child: Text(
-        title,
-        style: TextStyle(
-          fontSize: 13,
-          fontWeight: FontWeight.bold,
-          color: Colors.grey.shade700,
-          fontFamily: 'Tajawal',
+          ],
         ),
       ),
     );

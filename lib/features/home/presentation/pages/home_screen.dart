@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:taamol_tech/core/constants/app_colors.dart';
 import 'package:taamol_tech/core/constants/app_strings.dart';
+import 'package:taamol_tech/core/constants/product_categories.dart';
 import 'package:taamol_tech/features/products/data/models/product_model.dart';
-import 'package:taamol_tech/features/admin/screens/add_edit_product_screen.dart'; // تم تصحيح المسار
+import 'package:taamol_tech/features/products/presentation/pages/add_edit_product_screen.dart';
 import 'package:taamol_tech/features/products/presentation/pages/product_details_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -18,7 +19,9 @@ class _HomeScreenState extends State<HomeScreen> {
   final _supabase = Supabase.instance.client;
   bool _isAdmin = false;
 
+  String selectedMainCategory = 'all';
   String selectedCategory = 'all';
+
   String searchQuery = '';
   final TextEditingController _searchController = TextEditingController();
 
@@ -51,8 +54,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
       if (response != null && mounted) {
         final dynamic rawIsAdmin = response['is_admin'];
-        final bool isAdmin =
-            rawIsAdmin == true ||
+        final bool isAdmin = rawIsAdmin == true ||
             rawIsAdmin.toString().toLowerCase() == 'true' ||
             rawIsAdmin == 1;
 
@@ -94,7 +96,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _openEditor([ProductModel? product]) async {
     if (!_isAdmin) return;
-    // تم تصحيح اسم الكلاس إلى AddEditProductScreen
     final changed = await Navigator.push<bool>(
       context,
       MaterialPageRoute(builder: (_) => AddEditProductScreen(product: product)),
@@ -134,7 +135,15 @@ class _HomeScreenState extends State<HomeScreen> {
 
     try {
       await _supabase.from('products').delete().eq('id', product.id);
-      if (mounted) setState(() => _productsFuture = _loadProducts());
+      if (mounted) {
+        setState(() => _productsFuture = _loadProducts());
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('تم حذف المنتج بنجاح'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
     } on PostgrestException catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -237,27 +246,54 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: [
-                    _buildCategoryChip('all', isArabic ? 'الكل' : 'All'),
-                    _buildCategoryChip(
-                      'laptops',
-                      isArabic ? 'حواسب ولابتوبات' : 'Laptops',
+
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        _buildMainCategoryChip(
+                          'all',
+                          isArabic ? 'الكل' : 'All',
+                        ),
+                        ...ProductCategories.allMainCategories.map((mainCat) {
+                          return _buildMainCategoryChip(
+                            mainCat.id,
+                            mainCat.getName(isArabic),
+                          );
+                        }),
+                      ],
                     ),
-                    _buildCategoryChip(
-                      'printers',
-                      isArabic ? 'طابعات وأحبار' : 'Printers',
-                    ),
-                    _buildCategoryChip(
-                      'stationery',
-                      isArabic ? 'قرطاسية ومكتبية' : 'Stationery',
+                  ),
+                  if (selectedMainCategory != 'all') ...[
+                    const SizedBox(height: 10),
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: [
+                          _buildSubCategoryChip(
+                            selectedMainCategory,
+                            isArabic ? 'كل أنواع القسم' : 'All Types',
+                          ),
+                          ...ProductCategories.allMainCategories
+                              .firstWhere((m) => m.id == selectedMainCategory)
+                              .subCategories
+                              .map((subCat) {
+                            return _buildSubCategoryChip(
+                              subCat.id,
+                              subCat.getName(isArabic),
+                            );
+                          }),
+                        ],
+                      ),
                     ),
                   ],
-                ),
+                ],
               ),
               const SizedBox(height: 20),
+
               FutureBuilder<List<ProductModel>>(
                 future: _productsFuture,
                 builder: (context, snapshot) {
@@ -307,13 +343,26 @@ class _HomeScreenState extends State<HomeScreen> {
 
                   final filteredProducts = rawProducts.where((p) {
                     if (!_isAdmin && p.isAvailable == false) return false;
-                    final matchesCategory =
-                        selectedCategory == 'all' ||
-                        p.category == selectedCategory;
-                    final matchesSearch =
-                        searchQuery.isEmpty ||
+
+                    bool matchesCategory = false;
+                    if (selectedCategory == 'all') {
+                      matchesCategory = true;
+                    } else if (selectedCategory == selectedMainCategory) {
+                      final mainCatMatches = ProductCategories.allMainCategories
+                          .where((m) => m.id == selectedMainCategory);
+
+                      if (mainCatMatches.isNotEmpty) {
+                        matchesCategory = mainCatMatches.first.subCategories
+                            .any((sub) => sub.id == p.category);
+                      }
+                    } else {
+                      matchesCategory = p.category == selectedCategory;
+                    }
+
+                    final matchesSearch = searchQuery.isEmpty ||
                         p.nameAr.toLowerCase().contains(searchQuery) ||
                         p.nameEn.toLowerCase().contains(searchQuery);
+
                     return matchesCategory && matchesSearch;
                   }).toList();
 
@@ -338,11 +387,11 @@ class _HomeScreenState extends State<HomeScreen> {
                     itemCount: filteredProducts.length,
                     gridDelegate:
                         const SliverGridDelegateWithMaxCrossAxisExtent(
-                          maxCrossAxisExtent: 220,
-                          childAspectRatio: 0.70,
-                          crossAxisSpacing: 16,
-                          mainAxisSpacing: 16,
-                        ),
+                      maxCrossAxisExtent: 220,
+                      childAspectRatio: 0.70,
+                      crossAxisSpacing: 16,
+                      mainAxisSpacing: 16,
+                    ),
                     itemBuilder: (context, index) {
                       final product = filteredProducts[index];
                       return _ProductCardTile(
@@ -372,27 +421,55 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildCategoryChip(String categoryKey, String label) {
-    final bool isSelected = selectedCategory == categoryKey;
+  Widget _buildMainCategoryChip(String id, String label) {
+    final bool isSelected = selectedMainCategory == id;
     return Padding(
-      padding: const EdgeInsets.only(left: 4.0, right: 4.0),
+      padding: const EdgeInsets.symmetric(horizontal: 4.0),
       child: ChoiceChip(
         label: Text(
           label,
           style: TextStyle(
             color: isSelected ? Colors.white : AppColors.deepPurple,
             fontWeight: FontWeight.bold,
-            fontSize: 12,
+            fontSize: 13,
+            fontFamily: 'Tajawal',
+          ),
+        ),
+        selected: isSelected,
+        selectedColor: AppColors.deepPurple,
+        backgroundColor: AppColors.cardWhite,
+        showCheckmark: false,
+        onSelected: (selected) {
+          setState(() {
+            selectedMainCategory = id;
+            selectedCategory = id;
+          });
+        },
+      ),
+    );
+  }
+
+  Widget _buildSubCategoryChip(String id, String label) {
+    final bool isSelected = selectedCategory == id;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4.0),
+      child: ChoiceChip(
+        label: Text(
+          id == selectedMainCategory ? label : '↳ $label',
+          style: TextStyle(
+            color: isSelected ? Colors.white : AppColors.primaryCyan,
+            fontWeight: FontWeight.bold,
+            fontSize: 11,
             fontFamily: 'Tajawal',
           ),
         ),
         selected: isSelected,
         selectedColor: AppColors.primaryCyan,
-        backgroundColor: AppColors.cardWhite,
+        backgroundColor: AppColors.primaryCyan.withValues(alpha: .1),
         showCheckmark: false,
-        onSelected: (bool selected) {
+        onSelected: (selected) {
           setState(() {
-            selectedCategory = categoryKey;
+            selectedCategory = id;
           });
         },
       ),
@@ -447,7 +524,6 @@ class _ProductCardTile extends StatelessWidget {
                         top: Radius.circular(16),
                       ),
                     ),
-                    // تم إزالة التحذيرات: الاعتماد على isNotEmpty مباشرة
                     child: ClipRRect(
                       borderRadius: const BorderRadius.vertical(
                         top: Radius.circular(16),
@@ -458,10 +534,10 @@ class _ProductCardTile extends StatelessWidget {
                               fit: BoxFit.cover,
                               errorBuilder: (context, error, stackTrace) =>
                                   const Icon(
-                                    Icons.broken_image_outlined,
-                                    size: 45,
-                                    color: Colors.grey,
-                                  ),
+                                Icons.broken_image_outlined,
+                                size: 45,
+                                color: Colors.grey,
+                              ),
                             )
                           : const Icon(
                               Icons.inventory_2_outlined,
@@ -470,7 +546,6 @@ class _ProductCardTile extends StatelessWidget {
                             ),
                     ),
                   ),
-
                   if (isAdmin && !product.isAvailable)
                     Positioned(
                       bottom: 8,
@@ -495,7 +570,6 @@ class _ProductCardTile extends StatelessWidget {
                         ),
                       ),
                     ),
-
                   if (isAdmin)
                     Positioned(
                       top: 4,
@@ -539,7 +613,6 @@ class _ProductCardTile extends StatelessWidget {
                 ],
               ),
             ),
-
             Padding(
               padding: const EdgeInsets.all(12.0),
               child: Column(
@@ -558,17 +631,20 @@ class _ProductCardTile extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    product.getDescription(isArabic),
+                    ProductCategories.getCategoryNameById(
+                      product.category,
+                      isArabic,
+                    ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 11,
-                      color: Colors.grey.shade600,
+                      color: AppColors.primaryCyan,
+                      fontWeight: FontWeight.w600,
                       fontFamily: 'Tajawal',
                     ),
                   ),
                   const SizedBox(height: 12),
-
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [

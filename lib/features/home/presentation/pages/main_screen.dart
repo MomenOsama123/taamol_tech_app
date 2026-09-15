@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:taamol_tech/core/constants/app_colors.dart';
-import 'package:taamol_tech/core/constants/app_strings.dart';
+import 'package:taamol_tech/features/admin/screens/add_edit_product_screen.dart';
 import 'package:taamol_tech/features/home/presentation/pages/contact_us_screen.dart';
 import 'package:taamol_tech/features/home/presentation/pages/home_screen.dart';
-import 'package:taamol_tech/features/home/presentation/pages/profile_screen.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -15,16 +14,22 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   int _currentIndex = 0;
 
-  final List<Widget> _pages = [
-    const HomeScreen(),
-    const ContactUsScreen(),
-    const ProfileScreen(),
+  // 🌟 العناصر الثابتة لصفحات الشريط السفلي
+  final List<Widget> _pages = const [
+    HomeScreen(),
+    ContactUsScreen(),
+    ProfileScreen(),
   ];
 
   @override
   Widget build(BuildContext context) {
+    final bool isArabic = Localizations.localeOf(context).languageCode == 'ar';
+
     return Scaffold(
-      body: IndexedStack(index: _currentIndex, children: _pages),
+      body: IndexedStack(
+        index: _currentIndex,
+        children: _pages,
+      ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
         selectedItemColor: AppColors.primaryCyan,
@@ -39,17 +44,17 @@ class _MainScreenState extends State<MainScreen> {
           BottomNavigationBarItem(
             icon: const Icon(Icons.grid_view_outlined),
             activeIcon: const Icon(Icons.grid_view),
-            label: AppStrings.tr(context, AppStrings.products),
+            label: isArabic ? 'المنتجات' : 'Products',
           ),
           BottomNavigationBarItem(
-            icon: const Icon(Icons.support_agent_outlined),
-            activeIcon: const Icon(Icons.support_agent),
-            label: AppStrings.tr(context, AppStrings.contactUs),
+            icon: const Icon(Icons.headset_mic_outlined),
+            activeIcon: const Icon(Icons.headset_mic),
+            label: isArabic ? 'تواصل معنا' : 'Contact Us',
           ),
           BottomNavigationBarItem(
             icon: const Icon(Icons.person_outline),
             activeIcon: const Icon(Icons.person),
-            label: AppStrings.tr(context, AppStrings.profile),
+            label: isArabic ? 'حسابي' : 'Profile',
           ),
         ],
       ),
