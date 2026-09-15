@@ -22,7 +22,7 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
   late TextEditingController _descriptionArController;
   late TextEditingController _descriptionEnController;
   late TextEditingController _priceController;
-  late TextEditingController _imageUrlController; // 🔗 كنترولر رابط الصورة المباشر
+  late TextEditingController _imageUrlController;
 
   String? _selectedCategoryId;
   bool _isAvailable = true;
@@ -34,9 +34,15 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
     final p = widget.product;
     _nameArController = TextEditingController(text: p?.nameAr ?? '');
     _nameEnController = TextEditingController(text: p?.nameEn ?? '');
-    _descriptionArController = TextEditingController(text: p?.descriptionAr ?? '');
-    _descriptionEnController = TextEditingController(text: p?.descriptionEn ?? '');
-    _priceController = TextEditingController(text: p?.price != null ? p!.price.toStringAsFixed(0) : '');
+    _descriptionArController = TextEditingController(
+      text: p?.descriptionAr ?? '',
+    );
+    _descriptionEnController = TextEditingController(
+      text: p?.descriptionEn ?? '',
+    );
+    _priceController = TextEditingController(
+      text: p?.price != null ? p!.price.toStringAsFixed(0) : '',
+    );
     _imageUrlController = TextEditingController(text: p?.imageUrl ?? '');
 
     _selectedCategoryId = p?.category;
@@ -58,7 +64,10 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
     if (!_formKey.currentState!.validate()) return;
     if (_selectedCategoryId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('يرجى اختيار قسم المنتج'), backgroundColor: Colors.red),
+        const SnackBar(
+          content: Text('يرجى اختيار قسم المنتج'),
+          backgroundColor: Colors.red,
+        ),
       );
       return;
     }
@@ -75,14 +84,17 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
         'description_en': _descriptionEnController.text.trim(),
         'price': price,
         'category': _selectedCategoryId,
-        'image_url': _imageUrlController.text.trim(), // حفظ الرابط النصي مباشرة في Supabase
+        'image_url': _imageUrlController.text.trim(),
         'is_available': _isAvailable,
       };
 
       if (widget.product == null) {
         await _supabase.from('products').insert(productData);
       } else {
-        await _supabase.from('products').update(productData).eq('id', widget.product!.id);
+        await _supabase
+            .from('products')
+            .update(productData)
+            .eq('id', widget.product!.id);
       }
 
       if (mounted) {
@@ -91,7 +103,10 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('حدث خطأ أثناء الحفظ: $e'), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text('حدث خطأ أثناء الحفظ: $e'),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     } finally {
@@ -99,11 +114,13 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
     }
   }
 
-  // 🔹 توليد عناصر القائمة المنسدلة بدون تكرار قيم أو تصادم الأقسام
+  // 🔹 بناء القائمة المنسدلة وفق الهيكلية الجديدة
+  // دالة بناء عناصر القائمة المنسدلة داخل _AddEditProductScreenState:
   List<DropdownMenuItem<String>> _buildCategoryDropdownItems(bool isArabic) {
     final List<DropdownMenuItem<String>> items = [];
 
     for (final mainCat in ProductCategories.allMainCategories) {
+      // 📁 عنوان القسم الرئيسي (Header غير قابل للاختيار)
       items.add(
         DropdownMenuItem<String>(
           enabled: false,
@@ -120,6 +137,7 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
         ),
       );
 
+      // ↳ كافة الأقسام الفرعية التفصيلية التابعة له
       for (final subCat in mainCat.subCategories) {
         items.add(
           DropdownMenuItem<String>(
@@ -136,7 +154,9 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
       }
     }
 
-    if (_selectedCategoryId != null && !items.any((item) => item.value == _selectedCategoryId)) {
+    // حماية: إضافة القسم الحالي إذا كان من الأقسام المسجلة سابقاً لمنع حدوث أي Exception
+    if (_selectedCategoryId != null &&
+        !items.any((item) => item.value == _selectedCategoryId)) {
       items.insert(
         0,
         DropdownMenuItem<String>(
@@ -177,14 +197,17 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 🔗 حقل إدخال رابط الصورة بدلاً من البوكس القديم
+              // 🔗 حقل إدخال رابط الصورة المباشر
               TextFormField(
                 controller: _imageUrlController,
                 keyboardType: TextInputType.url,
                 decoration: InputDecoration(
                   labelText: isArabic ? 'رابط الصورة (Image URL)' : 'Image URL',
                   hintText: 'https://example.com/image.jpg',
-                  prefixIcon: const Icon(Icons.link, color: AppColors.primaryCyan),
+                  prefixIcon: const Icon(
+                    Icons.link,
+                    color: AppColors.primaryCyan,
+                  ),
                   filled: true,
                   fillColor: AppColors.cardWhite,
                   border: OutlineInputBorder(
@@ -196,7 +219,7 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
               ),
               const SizedBox(height: 12),
 
-              // 🖼️ معاينة الصورة مباشرة من الرابط المكتوب
+              // 🖼️ معاينة الصورة
               if (_imageUrlController.text.trim().isNotEmpty) ...[
                 Container(
                   height: 140,
@@ -204,53 +227,71 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
                   decoration: BoxDecoration(
                     color: AppColors.cardWhite,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.primaryCyan.withValues(alpha: 0.3)),
+                    border: Border.all(
+                      color: AppColors.primaryCyan.withValues(alpha: 0.3),
+                    ),
                   ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(12),
                     child: Image.network(
                       _imageUrlController.text.trim(),
                       fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) => const Center(
-                        child: Text(
-                          'رابط الصورة غير صالح أو غير متاح',
-                          style: TextStyle(fontFamily: 'Tajawal', color: Colors.red, fontSize: 12),
-                        ),
-                      ),
+                      errorBuilder: (context, error, stackTrace) =>
+                          const Center(
+                            child: Text(
+                              'رابط الصورة غير صالح أو غير متاح',
+                              style: TextStyle(
+                                fontFamily: 'Tajawal',
+                                color: Colors.red,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
                     ),
                   ),
                 ),
                 const SizedBox(height: 16),
               ],
 
-              // اسم المنتج عربي
+              // اسم المنتج باللغة العربية
               TextFormField(
                 controller: _nameArController,
                 decoration: InputDecoration(
-                  labelText: isArabic ? 'اسم المنتج (بالعربية)' : 'Product Name (Arabic)',
+                  labelText: isArabic
+                      ? 'اسم المنتج (بالعربية)'
+                      : 'Product Name (Arabic)',
                   filled: true,
                   fillColor: AppColors.cardWhite,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
                 ),
-                validator: (val) => val == null || val.isEmpty ? 'يرجى إدخال اسم المنتج' : null,
+                validator: (val) =>
+                    val == null || val.isEmpty ? 'يرجى إدخال اسم المنتج' : null,
               ),
               const SizedBox(height: 12),
 
-              // اسم المنتج انجليزي
+              // اسم المنتج باللغة الإنجليزية
               TextFormField(
                 controller: _nameEnController,
                 decoration: InputDecoration(
-                  labelText: isArabic ? 'اسم المنتج (بالإنجليزية)' : 'Product Name (English)',
+                  labelText: isArabic
+                      ? 'اسم المنتج (بالإنجليزية)'
+                      : 'Product Name (English)',
                   filled: true,
                   fillColor: AppColors.cardWhite,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
                 ),
               ),
               const SizedBox(height: 12),
 
               Row(
                 children: [
-                  // قائمة الأقسام المنسدلة
+                  // قائمة الأقسام الجديدة المنسدلة
                   Expanded(
                     flex: 1,
                     child: DropdownButtonFormField<String>(
@@ -260,9 +301,15 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
                         labelText: isArabic ? 'القسم' : 'Category',
                         filled: true,
                         fillColor: AppColors.cardWhite,
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
                       ),
-                      hint: Text(isArabic ? 'اختر القسم' : 'Select Category', style: const TextStyle(fontSize: 12)),
+                      hint: Text(
+                        isArabic ? 'اختر القسم' : 'Select Category',
+                        style: const TextStyle(fontSize: 12),
+                      ),
                       items: _buildCategoryDropdownItems(isArabic),
                       onChanged: (val) {
                         if (val != null && !val.startsWith('header_')) {
@@ -284,9 +331,13 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
                         labelText: isArabic ? 'السعر (ر.س)' : 'Price (SAR)',
                         filled: true,
                         fillColor: AppColors.cardWhite,
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
                       ),
-                      validator: (val) => val == null || val.isEmpty ? 'أدخل السعر' : null,
+                      validator: (val) =>
+                          val == null || val.isEmpty ? 'أدخل السعر' : null,
                     ),
                   ),
                 ],
@@ -298,10 +349,15 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
                 controller: _descriptionArController,
                 maxLines: 2,
                 decoration: InputDecoration(
-                  labelText: isArabic ? 'الوصف (بالعربية)' : 'Description (Arabic)',
+                  labelText: isArabic
+                      ? 'الوصف (بالعربية)'
+                      : 'Description (Arabic)',
                   filled: true,
                   fillColor: AppColors.cardWhite,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
                 ),
               ),
               const SizedBox(height: 12),
@@ -311,19 +367,27 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
                 controller: _descriptionEnController,
                 maxLines: 2,
                 decoration: InputDecoration(
-                  labelText: isArabic ? 'الوصف (بالإنجليزية)' : 'Description (English)',
+                  labelText: isArabic
+                      ? 'الوصف (بالإنجليزية)'
+                      : 'Description (English)',
                   filled: true,
                   fillColor: AppColors.cardWhite,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
                 ),
               ),
               const SizedBox(height: 12),
 
-              // حالة التوفر
+              // حالة التوفر في المخزن
               SwitchListTile(
                 title: Text(
                   isArabic ? 'متوفر في المخزن' : 'In Stock / Available',
-                  style: const TextStyle(fontFamily: 'Tajawal', fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                    fontFamily: 'Tajawal',
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 value: _isAvailable,
                 activeThumbColor: AppColors.primaryCyan,
@@ -339,7 +403,9 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
                   onPressed: _isLoading ? null : _saveProduct,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.deepPurple,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                   child: _isLoading
                       ? const CircularProgressIndicator(color: Colors.white)

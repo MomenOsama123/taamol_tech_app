@@ -1,3 +1,5 @@
+
+/// نموذج القسم الفرعي
 class SubCategory {
   final String id;
   final String nameAr;
@@ -29,48 +31,103 @@ class MainCategory {
   String getName(bool isArabic) => isArabic ? nameAr : nameEn;
 }
 
-/// الكلاس الرئيسي للأقسام الموحدة
+/// كلاس الأقسام الموحد المحدث وفقاً للهيكلية الجديدة والتفاصيل الكاملة
 class ProductCategories {
+  static List<MainCategory> get all => allMainCategories;
+
   static const List<MainCategory> allMainCategories = [
-    // 1. أجهزة كمبيوتر
+    // 1. اجهزة كمبيوتر ولاب توبات
     MainCategory(
-      id: 'computers',
-      nameAr: 'أجهزة كمبيوتر',
-      nameEn: 'Computers',
+      id: 'computers_and_laptops',
+      nameAr: 'اجهزة كمبيوتر ولاب توبات',
+      nameEn: 'Computers & Laptops',
       subCategories: [
-        SubCategory(id: 'computers_desktop', nameAr: 'Desktop', nameEn: 'Desktop'),
+        SubCategory(
+          id: 'computers_desktop',
+          nameAr: 'Desktop',
+          nameEn: 'Desktop',
+        ),
         SubCategory(id: 'computers_laptop', nameAr: 'Laptop', nameEn: 'Laptop'),
-        SubCategory(id: 'computers_servers', nameAr: 'Servers', nameEn: 'Servers'),
-        SubCategory(id: 'computers_workstations', nameAr: 'Workstations', nameEn: 'Workstations'),
+        SubCategory(
+          id: 'computers_servers',
+          nameAr: 'Servers',
+          nameEn: 'Servers',
+        ),
+        SubCategory(
+          id: 'computers_workstations',
+          nameAr: 'Workstations',
+          nameEn: 'Workstations',
+        ),
         SubCategory(id: 'computers_gaming', nameAr: 'Gaming', nameEn: 'Gaming'),
       ],
     ),
 
-    // 2. الطباعة وماكينات التصوير
+    // 2. طابعات وماكينات التصوير
     MainCategory(
-      id: 'printing_and_copying',
-      nameAr: 'الطباعة وماكينات التصوير',
-      nameEn: 'Printing & Copying',
+      id: 'printers_and_copiers',
+      nameAr: 'طابعات وماكينات التصوير',
+      nameEn: 'Printers & Copiers',
       subCategories: [
-        SubCategory(id: 'printing_original_ink', nameAr: 'أحبار أصلية', nameEn: 'Original Ink'),
-        SubCategory(id: 'printing_compatible_ink', nameAr: 'أحبار صيني / Compatible', nameEn: 'Compatible Ink'),
-        SubCategory(id: 'printing_printer_accessories', nameAr: 'إكسسوارات الطابعات', nameEn: 'Printer Accessories'),
-        SubCategory(id: 'printing_copier_accessories', nameAr: 'إكسسوارات ماكينات التصوير', nameEn: 'Copier Accessories'),
+        SubCategory(
+          id: 'printing_printer_accessories',
+          nameAr: 'إكسسوارات الطابعات',
+          nameEn: 'Printer Accessories',
+        ),
+        SubCategory(
+          id: 'printing_copier_accessories',
+          nameAr: 'إكسسوارات ماكينات التصوير',
+          nameEn: 'Copier Accessories',
+        ),
       ],
     ),
 
-    // 3. قرطاسية وأدوات مكتبية
+    // 3. احبار اصلي وصيني
     MainCategory(
-      id: 'stationery_and_office',
-      nameAr: 'قرطاسية وأدوات مكتبية',
-      nameEn: 'Stationery & Office Supplies',
+      id: 'ink_original_and_compatible',
+      nameAr: 'احبار اصلي وصيني',
+      nameEn: 'Original & Compatible Ink',
       subCategories: [
-        SubCategory(id: 'stationery_supplies', nameAr: 'قرطاسية وأدوات مكتبية', nameEn: 'Stationery & Office Supplies'),
+        SubCategory(
+          id: 'printing_original_ink',
+          nameAr: 'أحبار أصلية',
+          nameEn: 'Original Ink',
+        ),
+        SubCategory(
+          id: 'printing_compatible_ink',
+          nameAr: 'أحبار صيني / Compatible',
+          nameEn: 'Compatible Ink',
+        ),
+      ],
+    ),
+
+    // 4. قطع غيار مكنات التصوير
+    MainCategory(
+      id: 'copier_spare_parts',
+      nameAr: 'قطع غيار مكنات التصوير',
+      nameEn: 'Copier Spare Parts',
+      subCategories: [
+        SubCategory(
+          id: 'copier_parts_all',
+          nameAr: 'قطع غيار مكنات التصوير',
+          nameEn: 'Copier Spare Parts',
+        ),
+      ],
+    ),
+
+    // 5. قطع غيار الكمبيوترولاب توبات
+    MainCategory(
+      id: 'computer_parts_main',
+      nameAr: 'قطع غيار الكمبيوترولاب توبات',
+      nameEn: 'Computer & Laptop Parts',
+      subCategories: [
+        SubCategory(
+          id: 'computer_parts_all',
+          nameAr: 'قطع غيار الكمبيوترولاب توبات',
+          nameEn: 'Computer & Laptop Parts',
+        ),
       ],
     ),
   ];
-
-  static get all => null;
 
   /// جلب اسم القسم (رئيسي أو فرعي) باستخدام الـ ID
   static String getCategoryNameById(String id, bool isArabic) {

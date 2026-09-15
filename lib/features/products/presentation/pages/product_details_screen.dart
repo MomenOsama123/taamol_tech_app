@@ -8,7 +8,7 @@ class ProductDetailsScreen extends StatelessWidget {
   final ProductModel product;
 
   // 🟢 ضع رقم واتساب الشركة هنا بدون (00) أو (+)
-  final String companyWhatsAppNumber = '966500000000';
+  final String companyWhatsAppNumber = '966530843835';
 
   const ProductDetailsScreen({super.key, required this.product});
 

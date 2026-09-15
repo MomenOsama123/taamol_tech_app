@@ -5,7 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 class ContactUsScreen extends StatelessWidget {
   const ContactUsScreen({super.key});
 
-  final String companyWhatsAppNumber = '201020931722'; 
+  final String companyWhatsAppNumber = '966530843835'; 
 
   Future<void> _openWhatsApp(BuildContext context, bool isArabic) async {
     final String message = isArabic

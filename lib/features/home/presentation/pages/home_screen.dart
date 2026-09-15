@@ -19,8 +19,9 @@ class _HomeScreenState extends State<HomeScreen> {
   final _supabase = Supabase.instance.client;
   bool _isAdmin = false;
 
-  String selectedMainCategory = 'all';
-  String selectedCategory = 'all';
+  // 🌟 متغيرات الفلترة الشجرية
+  String selectedMainCategory = 'all'; // 'all', 'computers_and_laptops', 'printers_and_copiers'
+  String selectedCategory = 'all';     // ID القسم الفرعي المختار
 
   String searchQuery = '';
   final TextEditingController _searchController = TextEditingController();
@@ -207,6 +208,7 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // 1. شريط البحث
               TextField(
                 controller: _searchController,
                 onChanged: (value) {
@@ -216,8 +218,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 },
                 decoration: InputDecoration(
                   hintText: isArabic
-                      ? 'ابحث عن أجهزة، طابعات، أو مستلزمات...'
-                      : 'Search laptops, printers...',
+                      ? 'ابحث عن أجهزة، طابعات، أو قطع غيار...'
+                      : 'Search laptops, printers, spare parts...',
                   hintStyle: TextStyle(
                     fontSize: 12,
                     color: Colors.grey.shade500,
@@ -247,9 +249,11 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               const SizedBox(height: 16),
 
+              // 2. شريط التصنيفات الشجري (الرئيسية والفرعية)
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // أ. الأقسام الرئيسية
                   SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     child: Row(
@@ -267,6 +271,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       ],
                     ),
                   ),
+
+                  // ب. الأقسام الفرعية (تظهر فقط عند اختيار قسم رئيسي غير "الكل")
                   if (selectedMainCategory != 'all') ...[
                     const SizedBox(height: 10),
                     SingleChildScrollView(
@@ -294,6 +300,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               const SizedBox(height: 20),
 
+              // 3. شبكة عرض المنتجات
               FutureBuilder<List<ProductModel>>(
                 future: _productsFuture,
                 builder: (context, snapshot) {
@@ -344,6 +351,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   final filteredProducts = rawProducts.where((p) {
                     if (!_isAdmin && p.isAvailable == false) return false;
 
+                    // منطق المطابقة بالأقسام الشجرية
                     bool matchesCategory = false;
                     if (selectedCategory == 'all') {
                       matchesCategory = true;

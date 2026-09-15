@@ -73,6 +73,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget build(BuildContext context) {
     final bool isArabic = Localizations.localeOf(context).languageCode == 'ar';
     final user = _supabase.auth.currentUser;
+    final bool isGuest = user == null; // 🌟 تحديد حالة الزائر
 
     if (_isLoading) {
       return const Scaffold(
@@ -101,7 +102,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         padding: const EdgeInsets.all(20.0),
         child: Column(
           children: [
-            // 1. كارت معلومات الحساب
+            // 1. كارت معلومات الحساب / الزائر
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(20),
@@ -125,13 +126,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         backgroundColor: AppColors.primaryCyan.withValues(
                           alpha: 0.2,
                         ),
-                        child: const Icon(
-                          Icons.person,
+                        child: Icon(
+                          isGuest ? Icons.person_outline_rounded : Icons.person,
                           size: 50,
                           color: AppColors.deepPurple,
                         ),
                       ),
-                      if (_isAdmin)
+                      if (_isAdmin && !isGuest)
                         Positioned(
                           bottom: 0,
                           right: 0,
@@ -157,8 +158,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ],
                   ),
                   const SizedBox(height: 12),
+                  // الاسم أو حالة الزائر
                   Text(
-                    _fullName.isEmpty ? 'مستخدم' : _fullName,
+                    isGuest
+                        ? (isArabic ? 'زائر' : 'Guest')
+                        : (_fullName.isEmpty ? 'مستخدم' : _fullName),
                     style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -166,16 +170,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       fontFamily: 'Tajawal',
                     ),
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    _email,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey.shade600,
-                      fontFamily: 'Tajawal',
+
+                  // تفاصيل المستخدم المسجل فقط
+                  if (!isGuest) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      _email,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey.shade600,
+                        fontFamily: 'Tajawal',
+                      ),
                     ),
-                  ),
-                  if (user != null) ...[
                     const SizedBox(height: 8),
                     Container(
                       padding: const EdgeInsets.symmetric(
@@ -196,13 +202,61 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                     ),
                   ],
+
+                  // 🌟 زر تسجيل الدخول للزائر داخل الكارت
+                  if (isGuest) ...[
+                    const SizedBox(height: 12),
+                    Text(
+                      isArabic
+                          ? 'قم بتسجيل الدخول للاستفادة من كافة ميزات التطبيق'
+                          : 'Log in to enjoy all app features',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey.shade600,
+                        fontFamily: 'Tajawal',
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 44,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          Navigator.pushAndRemoveUntil(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const LoginScreen(),
+                            ),
+                            (route) => false,
+                          );
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.deepPurple,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: Text(
+                          isArabic
+                              ? 'تسجيل الدخول / حساب جديد'
+                              : 'Log In / Register',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontFamily: 'Tajawal',
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
             const SizedBox(height: 20),
 
-            // 2. أدوات الإدارة (تظهر للأدمن فقط)
-            if (_isAdmin) ...[
+            // 2. أدوات الإدارة (تظهر للأدمن المسجل فقط)
+            if (_isAdmin && !isGuest) ...[
               Align(
                 alignment: isArabic
                     ? Alignment.centerRight
@@ -306,29 +360,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             const SizedBox(height: 28),
 
-            // 4. زر تسجيل الخروج
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: OutlinedButton.icon(
-                onPressed: _signOut,
-                icon: const Icon(Icons.logout, color: Colors.red),
-                label: Text(
-                  isArabic ? 'تسجيل الخروج' : 'Log Out',
-                  style: const TextStyle(
-                    color: Colors.red,
-                    fontWeight: FontWeight.bold,
-                    fontFamily: 'Tajawal',
+            // 4. زر تسجيل الخروج (يختفي في حالة الزائر) 🌟
+            if (!isGuest)
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: OutlinedButton.icon(
+                  onPressed: _signOut,
+                  icon: const Icon(Icons.logout, color: Colors.red),
+                  label: Text(
+                    isArabic ? 'تسجيل الخروج' : 'Log Out',
+                    style: const TextStyle(
+                      color: Colors.red,
+                      fontWeight: FontWeight.bold,
+                      fontFamily: 'Tajawal',
+                    ),
                   ),
-                ),
-                style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: Colors.red),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: Colors.red),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                 ),
               ),
-            ),
           ],
         ),
       ),
