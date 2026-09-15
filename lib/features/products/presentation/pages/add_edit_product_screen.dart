@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:taamol_tech/core/constants/app_colors.dart';
 import 'package:taamol_tech/core/constants/product_categories.dart';
@@ -23,13 +22,11 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
   late TextEditingController _descriptionArController;
   late TextEditingController _descriptionEnController;
   late TextEditingController _priceController;
+  late TextEditingController _imageUrlController; // 🔗 كنترولر رابط الصورة المباشر
 
   String? _selectedCategoryId;
   bool _isAvailable = true;
   bool _isLoading = false;
-
-  String? _imageUrl;
-  final ImagePicker _picker = ImagePicker();
 
   @override
   void initState() {
@@ -40,10 +37,10 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
     _descriptionArController = TextEditingController(text: p?.descriptionAr ?? '');
     _descriptionEnController = TextEditingController(text: p?.descriptionEn ?? '');
     _priceController = TextEditingController(text: p?.price != null ? p!.price.toStringAsFixed(0) : '');
+    _imageUrlController = TextEditingController(text: p?.imageUrl ?? '');
 
     _selectedCategoryId = p?.category;
     _isAvailable = p?.isAvailable ?? true;
-    _imageUrl = p?.imageUrl;
   }
 
   @override
@@ -53,42 +50,8 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
     _descriptionArController.dispose();
     _descriptionEnController.dispose();
     _priceController.dispose();
+    _imageUrlController.dispose();
     super.dispose();
-  }
-
-  // 📸 رفع Bytes الصورة مباشرة لجلب Public URL متوافق مع الويب والموبايل
-  Future<void> _pickAndUploadImage() async {
-    try {
-      final XFile? pickedFile = await _picker.pickImage(
-        source: ImageSource.gallery,
-        imageQuality: 80,
-      );
-
-      if (pickedFile == null) return;
-
-      setState(() => _isLoading = true);
-
-      final bytes = await pickedFile.readAsBytes();
-      final fileName = '${DateTime.now().millisecondsSinceEpoch}_${pickedFile.name}';
-      final path = 'products/$fileName';
-
-      await _supabase.storage.from('product_images').uploadBinary(path, bytes);
-      final publicUrl = _supabase.storage.from('product_images').getPublicUrl(path);
-
-      if (mounted) {
-        setState(() {
-          _imageUrl = publicUrl;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('فشل رفع الصورة: $e'), backgroundColor: Colors.red),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
   }
 
   Future<void> _saveProduct() async {
@@ -112,7 +75,7 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
         'description_en': _descriptionEnController.text.trim(),
         'price': price,
         'category': _selectedCategoryId,
-        'image_url': _imageUrl ?? '',
+        'image_url': _imageUrlController.text.trim(), // حفظ الرابط النصي مباشرة في Supabase
         'is_available': _isAvailable,
       };
 
@@ -134,6 +97,56 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  // 🔹 توليد عناصر القائمة المنسدلة بدون تكرار قيم أو تصادم الأقسام
+  List<DropdownMenuItem<String>> _buildCategoryDropdownItems(bool isArabic) {
+    final List<DropdownMenuItem<String>> items = [];
+
+    for (final mainCat in ProductCategories.allMainCategories) {
+      items.add(
+        DropdownMenuItem<String>(
+          enabled: false,
+          value: 'header_${mainCat.id}',
+          child: Text(
+            '--- ${mainCat.getName(isArabic)} ---',
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              color: AppColors.deepPurple,
+              fontFamily: 'Tajawal',
+              fontSize: 13,
+            ),
+          ),
+        ),
+      );
+
+      for (final subCat in mainCat.subCategories) {
+        items.add(
+          DropdownMenuItem<String>(
+            value: subCat.id,
+            child: Padding(
+              padding: const EdgeInsets.only(right: 8.0),
+              child: Text(
+                '↳ ${subCat.getName(isArabic)}',
+                style: const TextStyle(fontFamily: 'Tajawal', fontSize: 13),
+              ),
+            ),
+          ),
+        );
+      }
+    }
+
+    if (_selectedCategoryId != null && !items.any((item) => item.value == _selectedCategoryId)) {
+      items.insert(
+        0,
+        DropdownMenuItem<String>(
+          value: _selectedCategoryId,
+          child: Text(_selectedCategoryId!),
+        ),
+      );
+    }
+
+    return items;
   }
 
   @override
@@ -164,47 +177,53 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              GestureDetector(
-                onTap: _pickAndUploadImage,
-                child: Container(
-                  height: 160,
+              // 🔗 حقل إدخال رابط الصورة بدلاً من البوكس القديم
+              TextFormField(
+                controller: _imageUrlController,
+                keyboardType: TextInputType.url,
+                decoration: InputDecoration(
+                  labelText: isArabic ? 'رابط الصورة (Image URL)' : 'Image URL',
+                  hintText: 'https://example.com/image.jpg',
+                  prefixIcon: const Icon(Icons.link, color: AppColors.primaryCyan),
+                  filled: true,
+                  fillColor: AppColors.cardWhite,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+                onChanged: (_) => setState(() {}),
+              ),
+              const SizedBox(height: 12),
+
+              // 🖼️ معاينة الصورة مباشرة من الرابط المكتوب
+              if (_imageUrlController.text.trim().isNotEmpty) ...[
+                Container(
+                  height: 140,
                   width: double.infinity,
                   decoration: BoxDecoration(
                     color: AppColors.cardWhite,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AppColors.primaryCyan.withValues(alpha: 0.4), width: 1.5),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppColors.primaryCyan.withValues(alpha: 0.3)),
                   ),
-                  child: (_imageUrl != null && _imageUrl!.isNotEmpty)
-                      ? ClipRRect(
-                          borderRadius: BorderRadius.circular(16),
-                          child: Image.network(
-                            _imageUrl!,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) => const Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.broken_image_outlined, size: 40, color: Colors.grey),
-                                SizedBox(height: 4),
-                                Text('تعذر تحميل الصورة من الرابط', style: TextStyle(fontFamily: 'Tajawal', fontSize: 12)),
-                              ],
-                            ),
-                          ),
-                        )
-                      : Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(Icons.add_photo_alternate_outlined, size: 48, color: AppColors.deepPurple),
-                            const SizedBox(height: 8),
-                            Text(
-                              isArabic ? 'اضغط لاختيار صورة المنتج' : 'Tap to select product image',
-                              style: const TextStyle(color: AppColors.deepPurple, fontFamily: 'Tajawal'),
-                            ),
-                          ],
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: Image.network(
+                      _imageUrlController.text.trim(),
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) => const Center(
+                        child: Text(
+                          'رابط الصورة غير صالح أو غير متاح',
+                          style: TextStyle(fontFamily: 'Tajawal', color: Colors.red, fontSize: 12),
                         ),
+                      ),
+                    ),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 16),
+                const SizedBox(height: 16),
+              ],
 
+              // اسم المنتج عربي
               TextFormField(
                 controller: _nameArController,
                 decoration: InputDecoration(
@@ -217,6 +236,7 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
               ),
               const SizedBox(height: 12),
 
+              // اسم المنتج انجليزي
               TextFormField(
                 controller: _nameEnController,
                 decoration: InputDecoration(
@@ -230,10 +250,11 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
 
               Row(
                 children: [
+                  // قائمة الأقسام المنسدلة
                   Expanded(
                     flex: 1,
                     child: DropdownButtonFormField<String>(
-                      value: _selectedCategoryId,
+                      initialValue: _selectedCategoryId,
                       isExpanded: true,
                       decoration: InputDecoration(
                         labelText: isArabic ? 'القسم' : 'Category',
@@ -242,37 +263,9 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                       ),
                       hint: Text(isArabic ? 'اختر القسم' : 'Select Category', style: const TextStyle(fontSize: 12)),
-                      items: ProductCategories.allMainCategories.expand((mainCat) {
-                        return [
-                          DropdownMenuItem<String>(
-                            enabled: false,
-                            value: null,
-                            child: Text(
-                              '--- ${mainCat.getName(isArabic)} ---',
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.deepPurple,
-                                fontFamily: 'Tajawal',
-                                fontSize: 13,
-                              ),
-                            ),
-                          ),
-                          ...mainCat.subCategories.map((subCat) {
-                            return DropdownMenuItem<String>(
-                              value: subCat.id,
-                              child: Padding(
-                                padding: const EdgeInsets.only(right: 8.0),
-                                child: Text(
-                                  '↳ ${subCat.getName(isArabic)}',
-                                  style: const TextStyle(fontFamily: 'Tajawal', fontSize: 13),
-                                ),
-                              ),
-                            );
-                          }),
-                        ];
-                      }).toList(),
+                      items: _buildCategoryDropdownItems(isArabic),
                       onChanged: (val) {
-                        if (val != null) {
+                        if (val != null && !val.startsWith('header_')) {
                           setState(() => _selectedCategoryId = val);
                         }
                       },
@@ -281,6 +274,7 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
                   ),
                   const SizedBox(width: 12),
 
+                  // السعر
                   Expanded(
                     flex: 1,
                     child: TextFormField(
@@ -299,6 +293,7 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
               ),
               const SizedBox(height: 12),
 
+              // الوصف عربي
               TextFormField(
                 controller: _descriptionArController,
                 maxLines: 2,
@@ -311,6 +306,7 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
               ),
               const SizedBox(height: 12),
 
+              // الوصف انجليزي
               TextFormField(
                 controller: _descriptionEnController,
                 maxLines: 2,
@@ -323,17 +319,19 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
               ),
               const SizedBox(height: 12),
 
+              // حالة التوفر
               SwitchListTile(
                 title: Text(
                   isArabic ? 'متوفر في المخزن' : 'In Stock / Available',
                   style: const TextStyle(fontFamily: 'Tajawal', fontWeight: FontWeight.bold),
                 ),
                 value: _isAvailable,
-                activeColor: AppColors.primaryCyan,
+                activeThumbColor: AppColors.primaryCyan,
                 onChanged: (val) => setState(() => _isAvailable = val),
               ),
               const SizedBox(height: 24),
 
+              // زر الحفظ
               SizedBox(
                 width: double.infinity,
                 height: 50,
